@@ -24,7 +24,7 @@ func main() {
 		log.Println(err)
 	}
 
-	fmt.Println(t)
+	fmt.Printf("Trip created: %v\n", t)
 
 	// keep program running for now
 	for {
