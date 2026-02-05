@@ -15,10 +15,8 @@ func main() {
 	log.Println("Starting API Gateway")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello from API Gateway"))
-	})
+
+	mux.HandleFunc("POST /trip/preview", handleTripPreview)
 
 	srv := &http.Server{
 		Addr:    httpAddr,
