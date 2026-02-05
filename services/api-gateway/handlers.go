@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
+	"ride-sharing/shared/contracts"
 )
 
 func handleTripPreview(w http.ResponseWriter, r *http.Request) {
@@ -12,7 +12,15 @@ func handleTripPreview(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to parse JSON data", http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
+
+	// Validation
+	if reqBody.UserID == "" {
+		http.Error(w, "user ID is required", http.StatusBadRequest)
+		return
+	}
 
 	// TODO: Call trip service
-	log.Println("SUCCESS")
+	resp := contracts.APIResponse{Data: "OK"}
+	writeJSON(w, http.StatusCreated, resp)
 }
