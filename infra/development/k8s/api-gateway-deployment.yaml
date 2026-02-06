@@ -31,6 +31,9 @@ spec:
                 configMapKeyRef:
                   key: GATEWAY_HTTP_ADDR
                   name: app-config
+            # In-cluster: use K8s Service DNS name so API gateway can reach trip-service
+            - name: TRIP_SERVICE_URL
+              value: "http://trip-service:8083"
 ---
 apiVersion: v1
 kind: Service

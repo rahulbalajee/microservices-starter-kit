@@ -1,33 +1,39 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"log"
-	"ride-sharing/services/trip-service/internal/domain"
+	"net/http"
 	"ride-sharing/services/trip-service/internal/infrastructure/repository"
 	"ride-sharing/services/trip-service/internal/service"
-	"time"
+	"ride-sharing/shared/env"
 )
 
-func main() {
-	ctx := context.Background()
+var (
+	httpAddr = env.GetString("HTTP_ADDR", ":8083")
+)
 
+type application struct {
+	svc *service.Service
+}
+
+func main() {
 	inmemRepo := repository.NewInmemRepository()
 	svc := service.NewService(inmemRepo)
 
-	fare := &domain.RideFareModel{
-		UserID: "42",
-	}
-	t, err := svc.CreateTrip(ctx, fare)
-	if err != nil {
-		log.Println(err)
+	app := &application{
+		svc: svc,
 	}
 
-	fmt.Printf("Trip created: %v\n", t)
+	mux := http.NewServeMux()
 
-	// keep program running for now
-	for {
-		time.Sleep(time.Second)
+	mux.HandleFunc("GET /preview", app.createTrip)
+
+	srv := &http.Server{
+		Addr:    httpAddr,
+		Handler: mux,
+	}
+
+	if err := srv.ListenAndServe(); err != nil {
+		log.Fatalf("HTTP server error: %v\n", err)
 	}
 }

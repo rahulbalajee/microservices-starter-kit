@@ -2,8 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"io"
+	"log"
+	"maps"
 	"net/http"
-	"ride-sharing/shared/contracts"
+	"time"
+
+	"ride-sharing/shared/env"
 )
 
 func handleTripPreview(w http.ResponseWriter, r *http.Request) {
@@ -20,9 +25,31 @@ func handleTripPreview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Call trip service
+	// Call trip service (use K8s service name in cluster, localhost for local dev)
+	tripServiceURL := env.GetString("TRIP_SERVICE_URL", "http://localhost:8083")
+	req, err := http.NewRequest(http.MethodGet, tripServiceURL+"/preview", nil)
+	if err != nil {
+		http.Error(w, "error framing request", http.StatusInternalServerError)
+		return
+	}
 
-	
-	resp := contracts.APIResponse{Data: "OK"}
-	writeJSON(w, http.StatusCreated, resp)
+	client := http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "error making request", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Forward trip service response to client (status, headers, body)
+	maps.Copy(w.Header(), resp.Header)
+	w.WriteHeader(resp.StatusCode)
+
+	io.Copy(w, resp.Body)
+
+	//writeJSON(w, resp.StatusCode, nil)
 }

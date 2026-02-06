@@ -7,17 +7,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type service struct {
+type Service struct {
 	repo domain.TripRepository
 }
 
-func NewService(repo domain.TripRepository) *service {
-	return &service{
+func NewService(repo domain.TripRepository) *Service {
+	return &Service{
 		repo: repo,
 	}
 }
 
-func (s *service) CreateTrip(ctx context.Context, fare *domain.RideFareModel) (*domain.TripModel, error) {
+func (s *Service) CreateTrip(ctx context.Context, fare *domain.RideFareModel) (*domain.TripModel, error) {
 	t := &domain.TripModel{
 		ID:       primitive.NewObjectID(),
 		UserID:   fare.UserID,
