@@ -21,6 +21,8 @@ func handleTripPreview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Call trip service
+
+	
 	resp := contracts.APIResponse{Data: "OK"}
 	writeJSON(w, http.StatusCreated, resp)
 }
