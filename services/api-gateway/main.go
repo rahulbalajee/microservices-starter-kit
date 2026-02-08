@@ -16,12 +16,20 @@ var (
 	httpAddr = env.GetString("HTTP_ADDR", ":8081")
 )
 
+type application struct {
+	client *http.Client
+}
+
 func main() {
 	log.Println("Starting API Gateway")
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("POST /trip/preview", handleTripPreview)
+	app := application{
+		client: &http.Client{Timeout: 10 * time.Second},
+	}
+
+	mux.HandleFunc("POST /trip/preview", app.handleTripPreview)
 
 	srv := &http.Server{
 		Addr:              httpAddr,
@@ -50,12 +58,12 @@ func main() {
 	case err := <-serverErr:
 		log.Printf("error starting the server: %v\n", err)
 	case sig := <-shutdown:
-		log.Printf("server is shutting down due to %v signal", sig)
+		log.Printf("server is shutting down due to %v signal\n", sig)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		if err := srv.Shutdown(ctx); err != nil {
-			log.Printf("could not shutdown server gracefully %v", err)
+			log.Printf("could not shutdown server gracefully: %v\n", err)
 			srv.Close()
 		}
 	}
