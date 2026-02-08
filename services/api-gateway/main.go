@@ -28,8 +28,9 @@ func main() {
 		Handler:           mux,
 		ReadTimeout:       10 * time.Second,
 		ReadHeaderTimeout: 5 * time.Second,
-		WriteTimeout:      5 * time.Second,
-		IdleTimeout:       30 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       time.Minute,
+		MaxHeaderBytes:    1 << 20,
 	}
 
 	serverErr := make(chan error, 1)
