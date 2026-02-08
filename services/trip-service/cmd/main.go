@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	h "ride-sharing/services/trip-service/internal/infrastructure/http"
 	"ride-sharing/services/trip-service/internal/infrastructure/repository"
 	"ride-sharing/services/trip-service/internal/service"
 	"ride-sharing/shared/env"
@@ -12,21 +13,14 @@ var (
 	httpAddr = env.GetString("HTTP_ADDR", ":8083")
 )
 
-type application struct {
-	svc *service.Service
-}
-
 func main() {
 	inmemRepo := repository.NewInmemRepository()
 	svc := service.NewService(inmemRepo)
-
-	app := &application{
-		svc: svc,
-	}
+	httpHandler := h.HttpHandler{Service: svc}
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /preview", app.createTrip)
+	mux.HandleFunc("POST /preview", httpHandler.HandleTripPreview)
 
 	srv := &http.Server{
 		Addr:    httpAddr,
