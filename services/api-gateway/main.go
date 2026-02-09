@@ -29,7 +29,9 @@ func main() {
 		client: &http.Client{Timeout: 10 * time.Second},
 	}
 
-	mux.HandleFunc("POST /trip/preview", app.handleTripPreview)
+	mux.HandleFunc("POST /trip/preview", enableCORS(app.handleTripPreview))
+	mux.HandleFunc("/ws/drivers", handleDriversWebSocket)
+	mux.HandleFunc("/ws/riders", handleRidersWebSocket)
 
 	srv := &http.Server{
 		Addr:              httpAddr,
