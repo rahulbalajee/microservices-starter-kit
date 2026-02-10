@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
+	"ride-sharing/services/api-gateway/grpc_clients"
 	"ride-sharing/shared/env"
 )
 
@@ -17,17 +19,44 @@ var (
 )
 
 type application struct {
-	client *http.Client
+	client      *http.Client
+	tripService *atomic.Pointer[grpc_clients.TripServiceClient]
 }
 
 func main() {
 	log.Println("Starting API Gateway")
 
-	mux := http.NewServeMux()
+	tripServicePtr := &atomic.Pointer[grpc_clients.TripServiceClient]{}
+	defer func() {
+		if c := tripServicePtr.Load(); c != nil {
+			c.Close()
+		}
+	}()
+
+	go func() {
+		backoff := time.Second
+		for {
+			client, err := grpc_clients.NewTripServiceClient()
+			if err != nil {
+				log.Printf("trip service client: %v (retry in %v)\n", err, backoff)
+				time.Sleep(backoff)
+				if backoff < 30*time.Second {
+					backoff *= 2
+				}
+				continue
+			}
+			tripServicePtr.Store(client)
+			log.Println("trip service client connected")
+			return
+		}
+	}()
 
 	app := application{
-		client: &http.Client{Timeout: 10 * time.Second},
+		client:      &http.Client{Timeout: 10 * time.Second},
+		tripService: tripServicePtr,
 	}
+
+	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /trip/preview", enableCORS(app.handleTripPreview))
 	mux.HandleFunc("/ws/drivers", handleDriversWebSocket)
