@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"ride-sharing/services/trip-service/internal/domain"
+	tripTypes "ride-sharing/services/trip-service/pkg/types"
 	"ride-sharing/shared/types"
 	"time"
 
@@ -36,7 +37,7 @@ func (s *Service) CreateTrip(ctx context.Context, fare *domain.RideFareModel) (*
 	return s.repo.CreateTrip(ctx, t)
 }
 
-func (s *Service) GetRoute(ctx context.Context, pickup, destination *types.Coordinate) (*types.OsrmAPIResponse, error) {
+func (s *Service) GetRoute(ctx context.Context, pickup, destination *types.Coordinate) (*tripTypes.OsrmAPIResponse, error) {
 	baseURL := "http://router.project-osrm.org"
 	url := fmt.Sprintf("%s/route/v1/driving/%f,%f;%f,%f?overview=full&geometries=geojson",
 		baseURL,
@@ -66,7 +67,7 @@ func (s *Service) GetRoute(ctx context.Context, pickup, destination *types.Coord
 		return nil, fmt.Errorf("error reading osrm body: %v\n", err)
 	}
 
-	var routeResp types.OsrmAPIResponse
+	var routeResp tripTypes.OsrmAPIResponse
 	if err = json.Unmarshal(body, &routeResp); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %v\n", err)
 	}
