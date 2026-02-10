@@ -3,63 +3,55 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
+	"net"
 	"os"
 	"os/signal"
-	h "ride-sharing/services/trip-service/internal/infrastructure/http"
 	"ride-sharing/services/trip-service/internal/infrastructure/repository"
 	"ride-sharing/services/trip-service/internal/service"
 	"ride-sharing/shared/env"
 	"syscall"
-	"time"
+
+	grpcserver "google.golang.org/grpc"
 )
 
 var (
-	httpAddr = env.GetString("HTTP_ADDR", ":8083")
+	grpcAddr = env.GetString("GRPC_ADDR", ":9093")
 )
 
 func main() {
 	inmemRepo := repository.NewInmemRepository()
 	svc := service.NewService(inmemRepo)
-	httpHandler := h.HttpHandler{Service: svc}
 
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("POST /preview", httpHandler.HandleTripPreview)
-
-	srv := &http.Server{
-		Addr:              httpAddr,
-		Handler:           mux,
-		ReadTimeout:       10 * time.Second,
-		ReadHeaderTimeout: 5 * time.Second,
-		WriteTimeout:      10 * time.Second,
-		IdleTimeout:       time.Minute,
-		MaxHeaderBytes:    1 << 20,
-	}
-
-	serverErr := make(chan error, 1)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	go func() {
-		err := srv.ListenAndServe()
-		if err != nil && err != http.ErrServerClosed {
-			serverErr <- err
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+		<-sigCh
+		cancel()
+	}()
+
+	lis, err := net.Listen("tcp", grpcAddr)
+	if err != nil {
+		log.Fatalf("failed to listen: %v\n", err)
+	}
+
+	grpcServer := grpcserver.NewServer()
+
+	// TODO: initialize grpc handler implementation
+
+	log.Printf("starting gRPC server trip service on port %s\n", lis.Addr())
+
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Printf("failed to serve: %v\n", err)
+			cancel()
 		}
 	}()
 
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
-
-	select {
-	case err := <-serverErr:
-		log.Printf("error starting the server: %v\n", err)
-	case sig := <-shutdown:
-		log.Printf("server is shutting down due to %v signal\n", sig)
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		if err := srv.Shutdown(ctx); err != nil {
-			log.Printf("could not shutdown server gracefully: %v\n", err)
-			srv.Close()
-		}
-	}
+	// wait for shutdown signal
+	<-ctx.Done()
+	log.Println("shutting down the server")
+	grpcServer.GracefulStop()
 }
