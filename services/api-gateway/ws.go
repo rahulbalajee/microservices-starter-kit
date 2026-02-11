@@ -37,7 +37,6 @@ func handleRidersWebSocket(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Printf("received message: %s\n", message)
 	}
-
 }
 
 func handleDriversWebSocket(w http.ResponseWriter, r *http.Request) {

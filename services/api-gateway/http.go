@@ -16,7 +16,7 @@ func (app *application) handleTripPreview(w http.ResponseWriter, r *http.Request
 	}
 	defer r.Body.Close()
 
-	// TODO: Validation
+	// TODO: Add more validation
 	if reqBody.UserID == "" {
 		http.Error(w, "user ID is required", http.StatusBadRequest)
 		return
