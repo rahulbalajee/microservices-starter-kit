@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"ride-sharing/services/trip-service/internal/domain"
 	tripTypes "ride-sharing/services/trip-service/pkg/types"
@@ -15,7 +14,9 @@ import (
 )
 
 type Service struct {
-	repo   domain.TripRepository
+	// the in-mem DB interface contract (swap out later with Mongo)
+	repo domain.TripRepository
+
 	client *http.Client
 }
 
@@ -62,13 +63,8 @@ func (s *Service) GetRoute(ctx context.Context, pickup, destination *types.Coord
 		return nil, fmt.Errorf("osrm api returned %d status code\n", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading osrm body: %v\n", err)
-	}
-
 	var routeResp tripTypes.OsrmAPIResponse
-	if err = json.Unmarshal(body, &routeResp); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&routeResp); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %v\n", err)
 	}
 
