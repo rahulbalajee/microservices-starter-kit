@@ -2,12 +2,13 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"ride-sharing/services/trip-service/internal/domain"
 	pb "ride-sharing/shared/proto/trip"
 	"ride-sharing/shared/types"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/runtime/protoimpl"
 )
 
@@ -58,10 +59,11 @@ func (h *gRPCHandler) PreviewTrip(ctx context.Context, req *pb.PreviewTripReques
 
 	t, err := h.service.GetRoute(ctx, pickupCoor, destinationCoor)
 	if err != nil {
-		return nil, fmt.Errorf("error fetching route: %v\n", err)
+		return nil, status.Errorf(codes.Internal, "failed to get route: %v\n", err)
 	}
 
 	return &pb.PreviewTripResponse{
-		Route: t.toProto(),
+		Route:     t.ToProto(),
+		RideFares: []*pb.RideFare{},
 	}, nil
 }
