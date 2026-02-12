@@ -51,7 +51,7 @@ func (app *application) handleTripStart(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Call the start endpoint from trip-service
-	tripStart, err := app.tripService.Load().Client.StartTrip(
+	tripStart, err := app.tripService.Load().Client.CreateTrip(
 		r.Context(),
 		reqBody.toProto(),
 	)

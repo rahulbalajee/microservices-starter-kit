@@ -68,6 +68,6 @@ func (g *gRPCHandler) PreviewTrip(ctx context.Context, req *pb.PreviewTripReques
 	}, nil
 }
 
-func (g *gRPCHandler) StartTrip(ctx context.Context, in *pb.CreateTripRequest) (*pb.CreateTripResponse, error) {
+func (g *gRPCHandler) CreateTrip(ctx context.Context, req *pb.CreateTripRequest) (*pb.CreateTripResponse, error) {
 	return nil, nil
 }
