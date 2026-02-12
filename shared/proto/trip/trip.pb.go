@@ -496,9 +496,10 @@ const file_trip_proto_rawDesc = "" +
 	"rideFareID\x12\x16\n" +
 	"\x06userID\x18\x02 \x01(\tR\x06userID\",\n" +
 	"\x12CreateTripResponse\x12\x16\n" +
-	"\x06tripID\x18\x01 \x01(\tR\x06tripID2Q\n" +
+	"\x06tripID\x18\x01 \x01(\tR\x06tripID2\x91\x01\n" +
 	"\vTripService\x12B\n" +
-	"\vPreviewTrip\x12\x18.trip.PreviewTripRequest\x1a\x19.trip.PreviewTripResponseB\x18Z\x16shared/proto/trip;tripb\x06proto3"
+	"\vPreviewTrip\x12\x18.trip.PreviewTripRequest\x1a\x19.trip.PreviewTripResponse\x12>\n" +
+	"\tStartTrip\x12\x17.trip.CreateTripRequest\x1a\x18.trip.CreateTripResponseB\x18Z\x16shared/proto/trip;tripb\x06proto3"
 
 var (
 	file_trip_proto_rawDescOnce sync.Once
@@ -531,9 +532,11 @@ var file_trip_proto_depIdxs = []int32{
 	4, // 4: trip.Route.geometry:type_name -> trip.Geometry
 	1, // 5: trip.Geometry.coordinates:type_name -> trip.Coordinate
 	0, // 6: trip.TripService.PreviewTrip:input_type -> trip.PreviewTripRequest
-	2, // 7: trip.TripService.PreviewTrip:output_type -> trip.PreviewTripResponse
-	7, // [7:8] is the sub-list for method output_type
-	6, // [6:7] is the sub-list for method input_type
+	6, // 7: trip.TripService.StartTrip:input_type -> trip.CreateTripRequest
+	2, // 8: trip.TripService.PreviewTrip:output_type -> trip.PreviewTripResponse
+	7, // 9: trip.TripService.StartTrip:output_type -> trip.CreateTripResponse
+	8, // [8:10] is the sub-list for method output_type
+	6, // [6:8] is the sub-list for method input_type
 	6, // [6:6] is the sub-list for extension type_name
 	6, // [6:6] is the sub-list for extension extendee
 	0, // [0:6] is the sub-list for field type_name

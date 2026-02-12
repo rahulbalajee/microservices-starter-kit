@@ -70,3 +70,7 @@ func (s *Service) GetRoute(ctx context.Context, pickup, destination *types.Coord
 
 	return &routeResp, nil
 }
+
+func (s *Service) StartTrip(ctx context.Context, ridefareid, userid string) (string, error) {
+	return "", nil
+}

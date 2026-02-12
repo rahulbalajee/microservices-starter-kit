@@ -51,7 +51,16 @@ func (app *application) handleTripStart(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Call the start endpoint from trip-service
+	tripStart, err := app.tripService.Load().Client.StartTrip(
+		r.Context(),
+		reqBody.toProto(),
+	)
+	if err != nil {
+		log.Printf("failed to start trip: %v\n", err)
+		http.Error(w, "failed to start trip", http.StatusInternalServerError)
+		return
+	}
 
-	response := contracts.APIResponse{Data: "OK"}
+	response := contracts.APIResponse{Data: tripStart}
 	writeJSON(w, http.StatusOK, response)
 }

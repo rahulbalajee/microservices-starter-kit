@@ -67,3 +67,7 @@ func (g *gRPCHandler) PreviewTrip(ctx context.Context, req *pb.PreviewTripReques
 		RideFares: []*pb.RideFare{},
 	}, nil
 }
+
+func (g *gRPCHandler) StartTrip(ctx context.Context, in *pb.CreateTripRequest) (*pb.CreateTripResponse, error) {
+	return nil, nil
+}
