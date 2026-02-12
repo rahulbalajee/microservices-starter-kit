@@ -71,6 +71,73 @@ func (s *Service) GetRoute(ctx context.Context, pickup, destination *types.Coord
 	return &routeResp, nil
 }
 
-func (s *Service) StartTrip(ctx context.Context, ridefareid, userid string) (string, error) {
-	return "", nil
+func (s *Service) EstimatePackagesPriceWithRoute(route *tripTypes.OsrmAPIResponse) []*domain.RideFareModel {
+	baseFares := getBaseFares()
+	estimatedFares := make([]*domain.RideFareModel, len(baseFares))
+
+	for i, f := range baseFares {
+		estimatedFares[i] = estimateFareRoute(f, route)
+	}
+
+	return estimatedFares
+}
+
+func (s *Service) GenerateTripFares(ctx context.Context, rideFares []*domain.RideFareModel, userID string) ([]*domain.RideFareModel, error) {
+	fares := make([]*domain.RideFareModel, len(rideFares))
+
+	for i, f := range rideFares {
+		id := primitive.NewObjectID()
+		fare := &domain.RideFareModel{
+			UserID:            userID,
+			ID:                id,
+			TotalPriceInCents: f.TotalPriceInCents,
+			PackageSlug:       f.PackageSlug,
+		}
+
+		if err := s.repo.SaveRideFare(ctx, fare); err != nil {
+			return nil, fmt.Errorf("error saving trip fare: %w\n", err)
+		}
+
+		fares[i] = fare
+	}
+
+	return fares, nil
+}
+
+func estimateFareRoute(fare *domain.RideFareModel, route *tripTypes.OsrmAPIResponse) *domain.RideFareModel {
+	pricingCfg := tripTypes.DefaultPricingConfig()
+	carPackagePrice := fare.TotalPriceInCents
+
+	distanceKm := route.Routes[0].Distance
+	durationInMinutes := route.Routes[0].Duration
+
+	distanceFare := distanceKm * pricingCfg.PricePerUnitOfDistance
+	timeFare := durationInMinutes * pricingCfg.PricePerMinute
+	totalFare := carPackagePrice + distanceFare + timeFare
+
+	return &domain.RideFareModel{
+		TotalPriceInCents: totalFare,
+		PackageSlug:       fare.PackageSlug,
+	}
+}
+
+func getBaseFares() []*domain.RideFareModel {
+	return []*domain.RideFareModel{
+		{
+			PackageSlug:       "suv",
+			TotalPriceInCents: 300,
+		},
+		{
+			PackageSlug:       "sedan",
+			TotalPriceInCents: 200,
+		},
+		{
+			PackageSlug:       "van",
+			TotalPriceInCents: 400,
+		},
+		{
+			PackageSlug:       "luxury",
+			TotalPriceInCents: 1000,
+		},
+	}
 }

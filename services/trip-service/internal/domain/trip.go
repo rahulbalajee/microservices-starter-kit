@@ -19,11 +19,13 @@ type TripModel struct {
 // Store the trip in the in-mem repo (or a database later on)
 type TripRepository interface {
 	CreateTrip(ctx context.Context, trip *TripModel) (*TripModel, error)
+	SaveRideFare(ctx context.Context, f *RideFareModel) error
 }
 
 // Use-case interface: what the app can do (user intent). Handlers call this; implementation lives in service layer.
 type TripService interface {
 	CreateTrip(ctx context.Context, fare *RideFareModel) (*TripModel, error)
 	GetRoute(ctx context.Context, pickup, destination *types.Coordinate) (*tripTypes.OsrmAPIResponse, error)
-	StartTrip(ctx context.Context, ridefareid, userid string) (string, error)
+	EstimatePackagesPriceWithRoute(route *tripTypes.OsrmAPIResponse) []*RideFareModel
+	GenerateTripFares(ctx context.Context, fares []*RideFareModel, userID string) ([]*RideFareModel, error)
 }
