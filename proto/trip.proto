@@ -41,3 +41,12 @@ message RideFare {
     string packageSlug = 3;
     double totalPriceInCents = 4;
 }
+
+message CreateTripRequest {
+    string rideFareID = 1;
+    string userID = 2;
+}
+  
+message CreateTripResponse {
+    string tripID = 1;
+}

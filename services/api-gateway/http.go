@@ -35,3 +35,23 @@ func (app *application) handleTripPreview(w http.ResponseWriter, r *http.Request
 	response := contracts.APIResponse{Data: tripPreview}
 	writeJSON(w, http.StatusCreated, response)
 }
+
+func (app *application) handleTripStart(w http.ResponseWriter, r *http.Request) {
+	var reqBody startTripRequest
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "failed to parse JSON data", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	// TODO: Add more validation
+	if reqBody.UserID == "" {
+		http.Error(w, "user ID is required", http.StatusBadRequest)
+		return
+	}
+
+	// Call the start endpoint from trip-service
+
+	response := contracts.APIResponse{Data: "OK"}
+	writeJSON(w, http.StatusOK, response)
+}
