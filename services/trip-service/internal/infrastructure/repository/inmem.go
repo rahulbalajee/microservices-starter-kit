@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"ride-sharing/services/trip-service/internal/domain"
 	"sync"
 )
@@ -33,4 +34,15 @@ func (r *inmemRepository) SaveRideFare(ctx context.Context, f *domain.RideFareMo
 	r.rideFares[f.ID.Hex()] = f
 
 	return nil
+}
+
+func (r *inmemRepository) GetRideFareByID(ctx context.Context, id string) (*domain.RideFareModel, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	rideFare, exists := r.rideFares[id]
+	if !exists {
+		return nil, fmt.Errorf("ride fare does not exist with ID: %s\n", id)
+	}
+
+	return rideFare, nil
 }

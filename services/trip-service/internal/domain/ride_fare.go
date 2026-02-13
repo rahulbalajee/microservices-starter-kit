@@ -6,6 +6,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	pb "ride-sharing/shared/proto/trip"
+
+	tripTypes "ride-sharing/services/trip-service/pkg/types"
 )
 
 type RideFareModel struct {
@@ -14,6 +16,7 @@ type RideFareModel struct {
 	PackageSlug       string //ex: van, sedan, luxury
 	TotalPriceInCents float64
 	Expires           time.Time
+	Route             *tripTypes.OsrmAPIResponse
 }
 
 func (r *RideFareModel) ToProto() *pb.RideFare {
