@@ -23,7 +23,7 @@ func NewTripServiceClient() (*TripServiceClient, error) {
 
 	conn, err := grpc.NewClient(tripServiceURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, fmt.Errorf("error opening conn: %v\n", err)
+		return nil, fmt.Errorf("error opening trip service conn: %v", err)
 	}
 
 	client := pb.NewTripServiceClient(conn)
@@ -38,7 +38,6 @@ func (c *TripServiceClient) Close() {
 	if c.conn != nil {
 		if err := c.conn.Close(); err != nil {
 			log.Println(err)
-			return
 		}
 	}
 }

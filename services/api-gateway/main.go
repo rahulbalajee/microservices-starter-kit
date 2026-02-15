@@ -19,8 +19,9 @@ var (
 )
 
 type application struct {
-	client      *http.Client
-	tripService *atomic.Pointer[grpc_clients.TripServiceClient]
+	client        *http.Client
+	tripService   *atomic.Pointer[grpc_clients.TripServiceClient]
+	driverService *atomic.Pointer[grpc_clients.DriverServiceClient]
 }
 
 func main() {
@@ -33,27 +34,29 @@ func main() {
 		}
 	}()
 
-	go func() {
-		backoff := time.Second
-		for {
-			client, err := grpc_clients.NewTripServiceClient()
-			if err != nil {
-				log.Printf("trip service client: %v (retry in %v)\n", err, backoff)
-				time.Sleep(backoff)
-				if backoff < 30*time.Second {
-					backoff *= 2
-				}
-				continue
-			}
-			tripServicePtr.Store(client)
-			log.Println("trip service client connected")
-			return
+	go connectWithBackoff(
+		"trip service",
+		tripServicePtr,
+		grpc_clients.NewTripServiceClient,
+	)
+
+	driverServicePtr := &atomic.Pointer[grpc_clients.DriverServiceClient]{}
+	defer func() {
+		if c := driverServicePtr.Load(); c != nil {
+			c.Close()
 		}
 	}()
 
+	go connectWithBackoff(
+		"driver service",
+		driverServicePtr,
+		grpc_clients.NewDriverServiceClient,
+	)
+
 	app := application{
-		client:      &http.Client{Timeout: 10 * time.Second},
-		tripService: tripServicePtr,
+		client:        &http.Client{Timeout: 10 * time.Second},
+		tripService:   tripServicePtr,
+		driverService: driverServicePtr,
 	}
 
 	mux := http.NewServeMux()
@@ -98,5 +101,23 @@ func main() {
 			log.Printf("could not shutdown server gracefully: %v\n", err)
 			srv.Close()
 		}
+	}
+}
+
+func connectWithBackoff[T any](name string, ptr *atomic.Pointer[T], newClient func() (*T, error)) {
+	backoff := time.Second
+	for {
+		client, err := newClient()
+		if err != nil {
+			log.Printf("%s client: %v (retry in %v)\n", name, err, backoff)
+			time.Sleep(backoff)
+			if backoff < 30*time.Second {
+				backoff *= 2
+			}
+			continue
+		}
+		ptr.Store(client)
+		log.Printf("%s service client connected\n", name)
+		return
 	}
 }
