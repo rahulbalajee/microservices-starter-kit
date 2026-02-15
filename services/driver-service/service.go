@@ -42,7 +42,7 @@ func (s *Service) RegisterDriver(driverId string, packageSlug string) (*pb.Drive
 		Name:           "Chuck Norris",
 		Id:             driverId,
 		PackageSlug:    packageSlug,
-		ProfilePicture: util.GetRandomAvatar(1),
+		ProfilePicture: util.GetRandomAvatar(randomIdx),
 		CarPlate:       GenerateRandomPlate(),
 	}
 
@@ -57,6 +57,7 @@ func (s *Service) UnregisterDriver(driverId string) {
 
 	for i, driverInMap := range s.drivers {
 		if driverInMap != nil && driverInMap.Driver != nil && driverInMap.Driver.Id == driverId {
+			// s.drivers = slices.append(s.drivers[:i], s.drivers[i+1:]...)
 			s.drivers = slices.Delete(s.drivers, i, i+1)
 			return
 		}

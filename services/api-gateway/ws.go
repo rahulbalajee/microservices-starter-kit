@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 	"ride-sharing/shared/contracts"
-	"ride-sharing/shared/util"
+	"ride-sharing/shared/proto/driver"
 
 	"github.com/gorilla/websocket"
 )
@@ -15,7 +15,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func handleRidersWebSocket(w http.ResponseWriter, r *http.Request) {
+func (app *application) handleRidersWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("websocket upgrade failed: %v\n", err)
@@ -39,7 +39,7 @@ func handleRidersWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleDriversWebSocket(w http.ResponseWriter, r *http.Request) {
+func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("websocker upgrade failed: %v\n", err)
@@ -59,11 +59,32 @@ func handleDriversWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO call drivers service
+	driverData, err := app.driverService.Load().Client.RegisterDriver(
+		r.Context(),
+		&driver.RegisterDriverRequest{
+			DriverID:    userID,
+			PackageSlug: packageSlug,
+		},
+	)
+	if err != nil {
+		log.Printf("error registering driverL %v", err)
+		return
+	}
+
+	defer func() {
+		app.driverService.Load().Client.UnregisterDriver(
+			r.Context(),
+			&driver.RegisterDriverRequest{
+				DriverID:    userID,
+				PackageSlug: packageSlug,
+			},
+		)
+		log.Println("driver unregistered: ", userID)
+	}()
 
 	msg := contracts.WSMessage{
 		Type: "driver.cmd.register",
-		Data: ,
+		Data: driverData.Driver,
 	}
 
 	if err := conn.WriteJSON(msg); err != nil {

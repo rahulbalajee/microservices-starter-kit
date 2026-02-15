@@ -28,7 +28,7 @@ func (g *grpcHandler) RegisterDriver(ctx context.Context, req *pb.RegisterDriver
 
 	driver, err := g.Service.RegisterDriver(driverId, packageSlug)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to register driver: %v\n", err)
+		return nil, status.Errorf(codes.Internal, "failed to register driver: %v", err)
 	}
 
 	return &pb.RegisterDriverResponse{Driver: driver}, nil
@@ -36,6 +36,12 @@ func (g *grpcHandler) RegisterDriver(ctx context.Context, req *pb.RegisterDriver
 
 func (g *grpcHandler) UnregisterDriver(ctx context.Context, req *pb.RegisterDriverRequest) (*pb.RegisterDriverResponse, error) {
 	driverId := req.GetDriverID()
+
 	g.Service.UnregisterDriver(driverId)
-	return nil, nil
+
+	return &pb.RegisterDriverResponse{
+		Driver: &pb.Driver{
+			Id: driverId,
+		},
+	}, nil
 }
