@@ -27,6 +27,8 @@ type application struct {
 func main() {
 	log.Println("Starting API Gateway")
 
+	maxBackoff := 30 * time.Second
+
 	tripServicePtr := &atomic.Pointer[grpc_clients.TripServiceClient]{}
 	defer func() {
 		if c := tripServicePtr.Load(); c != nil {
@@ -35,6 +37,7 @@ func main() {
 	}()
 
 	go connectWithBackoff(
+		maxBackoff,
 		"trip service",
 		tripServicePtr,
 		grpc_clients.NewTripServiceClient,
@@ -48,6 +51,7 @@ func main() {
 	}()
 
 	go connectWithBackoff(
+		maxBackoff,
 		"driver service",
 		driverServicePtr,
 		grpc_clients.NewDriverServiceClient,
@@ -104,15 +108,18 @@ func main() {
 	}
 }
 
-func connectWithBackoff[T any](name string, ptr *atomic.Pointer[T], newClient func() (*T, error)) {
+func connectWithBackoff[T any](maxBackoff time.Duration, name string, ptr *atomic.Pointer[T], newClient func() (*T, error)) {
 	backoff := time.Second
 	for {
 		client, err := newClient()
 		if err != nil {
 			log.Printf("%s client: %v (retry in %v)\n", name, err, backoff)
 			time.Sleep(backoff)
-			if backoff < 30*time.Second {
+			if backoff < maxBackoff {
 				backoff *= 2
+				if backoff > maxBackoff {
+					backoff = maxBackoff
+				}
 			}
 			continue
 		}

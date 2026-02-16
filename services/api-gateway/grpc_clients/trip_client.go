@@ -28,10 +28,7 @@ func NewTripServiceClient() (*TripServiceClient, error) {
 
 	client := pb.NewTripServiceClient(conn)
 
-	return &TripServiceClient{
-		Client: client,
-		conn:   conn,
-	}, nil
+	return &TripServiceClient{Client: client, conn: conn}, nil
 }
 
 func (c *TripServiceClient) Close() {
