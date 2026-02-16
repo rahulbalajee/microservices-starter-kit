@@ -4,6 +4,7 @@ Package env provides a simple way to get environment variables.
 package env
 
 import (
+	"log"
 	"os"
 	"strconv"
 )
@@ -25,6 +26,7 @@ func GetInt(key string, fallback int) int {
 
 	valAsInt, err := strconv.Atoi(val)
 	if err != nil {
+		log.Printf("val %v cannot be converted to int %v\n", val, err)
 		return fallback
 	}
 
@@ -39,6 +41,7 @@ func GetBool(key string, fallback bool) bool {
 
 	boolVal, err := strconv.ParseBool(val)
 	if err != nil {
+		log.Printf("val %v cannot be converted to bool %v\n", val, err)
 		return fallback
 	}
 

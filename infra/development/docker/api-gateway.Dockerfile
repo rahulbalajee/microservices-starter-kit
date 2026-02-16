@@ -4,4 +4,4 @@ WORKDIR /app
 ADD shared shared
 ADD build build
 
-ENTRYPOINT build/api-gateway
+ENTRYPOINT ["build/api-gateway"]
