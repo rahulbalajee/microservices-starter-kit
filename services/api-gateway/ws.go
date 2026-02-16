@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"ride-sharing/shared/contracts"
 	"ride-sharing/shared/proto/driver"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -42,7 +44,7 @@ func (app *application) handleRidersWebSocket(w http.ResponseWriter, r *http.Req
 func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Printf("websocker upgrade failed: %v\n", err)
+		log.Printf("websocket upgrade failed: %v\n", err)
 		return
 	}
 	defer conn.Close()
@@ -67,18 +69,25 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 		},
 	)
 	if err != nil {
-		log.Printf("error registering driverL %v", err)
+		log.Printf("error registering driver %v\n", err)
 		return
 	}
 
 	defer func() {
-		app.driverService.Load().Client.UnregisterDriver(
-			r.Context(),
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		_, err := app.driverService.Load().Client.UnregisterDriver(
+			ctx,
 			&driver.RegisterDriverRequest{
 				DriverID:    userID,
 				PackageSlug: packageSlug,
 			},
 		)
+		if err != nil {
+			log.Printf("error unregistering driver %v\n", err)
+			return
+		}
 		log.Println("driver unregistered: ", userID)
 	}()
 
@@ -98,6 +107,6 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 			log.Printf("error reading message: %v\n", err)
 			break
 		}
-		log.Printf("recieved message: %s\n", message)
+		log.Printf("received message: %s\n", message)
 	}
 }

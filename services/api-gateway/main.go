@@ -67,8 +67,8 @@ func main() {
 
 	mux.HandleFunc("POST /trip/preview", enableCORS(app.handleTripPreview))
 	mux.HandleFunc("POST /trip/start", enableCORS(app.handleTripStart))
-	mux.HandleFunc("/ws/drivers", app.handleDriversWebSocket)
 	mux.HandleFunc("/ws/riders", app.handleRidersWebSocket)
+	mux.HandleFunc("/ws/drivers", app.handleDriversWebSocket)
 
 	srv := &http.Server{
 		Addr:              httpAddr,
@@ -105,26 +105,5 @@ func main() {
 			log.Printf("could not shutdown server gracefully: %v\n", err)
 			srv.Close()
 		}
-	}
-}
-
-func connectWithBackoff[T any](maxBackoff time.Duration, name string, ptr *atomic.Pointer[T], newClient func() (*T, error)) {
-	backoff := time.Second
-	for {
-		client, err := newClient()
-		if err != nil {
-			log.Printf("%s client: %v (retry in %v)\n", name, err, backoff)
-			time.Sleep(backoff)
-			if backoff < maxBackoff {
-				backoff *= 2
-				if backoff > maxBackoff {
-					backoff = maxBackoff
-				}
-			}
-			continue
-		}
-		ptr.Store(client)
-		log.Printf("%s service client connected\n", name)
-		return
 	}
 }

@@ -31,9 +31,9 @@ type startTripRequest struct {
 	UserID     string `json:"userID"`
 }
 
-func (c *startTripRequest) toProto() *pb.CreateTripRequest {
+func (s *startTripRequest) toProto() *pb.CreateTripRequest {
 	return &pb.CreateTripRequest{
-		RideFareID: c.RideFareID,
-		UserID:     c.UserID,
+		RideFareID: s.RideFareID,
+		UserID:     s.UserID,
 	}
 }
