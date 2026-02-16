@@ -15,11 +15,10 @@ spec:
       containers:
       - name: driver-service
         image: ride-sharing/driver-service
-        imagePullPolicy: Never
         resources:
           requests:
             memory: "128Mi"
-            cpu: "200m"
+            cpu: "125m"
           limits:
             memory: "128Mi"
         ports:

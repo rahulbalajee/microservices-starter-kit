@@ -23,17 +23,9 @@ spec:
               cpu: "125m"
             limits:
               memory: "128Mi"
-              cpu: "125m"
-          env:
-            # Accessing an env variable from the app-config config map
-            - name: GATEWAY_HTTP_ADDR
-              valueFrom:
-                configMapKeyRef:
-                  key: GATEWAY_HTTP_ADDR
-                  name: app-config
-            # In-cluster: use K8s Service DNS name so API gateway can reach trip-service
-            - name: TRIP_SERVICE_GRPC_URL
-              value: "trip-service:9093"
+          envFrom:
+            - configMapRef:
+                name: app-config
 ---
 apiVersion: v1
 kind: Service
