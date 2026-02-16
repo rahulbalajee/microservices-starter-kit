@@ -4,4 +4,4 @@ metadata:
   name: app-config
 data:
   ENVIRONMENT: "production"
-  GATEWAY_HTTP_ADDR: ":8081"
+  GATEWAY_HTTP_ADDR: ":8081" 
