@@ -70,6 +70,10 @@ func (w *wsConn) WriteJSON(v any) error {
 	return w.c.WriteJSON(v)
 }
 
+func (w *wsConn) ReadMessage() (int, []byte, error) {
+	return w.c.ReadMessage()
+}
+
 func (w *wsConn) WriteMessage(messageType int, data []byte) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -95,6 +99,11 @@ func (w *wsConn) CloseNormal() {
 	)
 }
 
+func (w *wsConn) Close() {
+	w.CloseNormal()
+	_ = w.c.Close()
+}
+
 var upgrader = websocket.Upgrader{
 	// TODO: Fix this before production
 	CheckOrigin: func(r *http.Request) bool {
@@ -103,24 +112,23 @@ var upgrader = websocket.Upgrader{
 }
 
 func (app *application) handleRidersWebSocket(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Printf("websocket upgrade failed: %v\n", err)
-		return
-	}
-	defer conn.Close()
-
-	ws := newWSConn(conn)
-	defer ws.CloseNormal()
-
 	userID := r.URL.Query().Get("userID")
 	if userID == "" {
 		log.Println("no user id provided")
 		return
 	}
 
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("websocket upgrade failed: %v\n", err)
+		return
+	}
+
+	ws := newWSConn(conn)
+	defer ws.Close()
+
 	for {
-		_, message, err := conn.ReadMessage()
+		_, message, err := ws.ReadMessage()
 		if err != nil {
 			log.Printf("error reading message: %v\n", err)
 			break
@@ -130,16 +138,6 @@ func (app *application) handleRidersWebSocket(w http.ResponseWriter, r *http.Req
 }
 
 func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Printf("websocket upgrade failed: %v\n", err)
-		return
-	}
-	defer conn.Close()
-
-	ws := newWSConn(conn)
-	defer ws.CloseNormal()
-
 	userID := r.URL.Query().Get("userID")
 	if userID == "" {
 		log.Println("no user id provided")
@@ -151,6 +149,15 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 		log.Println("no package slug provided")
 		return
 	}
+
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("websocket upgrade failed: %v\n", err)
+		return
+	}
+
+	ws := newWSConn(conn)
+	defer ws.Close()
 
 	driverData, err := app.driverService.Load().Client.RegisterDriver(
 		r.Context(),
@@ -165,7 +172,8 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 	}
 
 	defer func() {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		// r.Context() is already cancelled when the connection drops so use background instead to unregister drivers
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
 		_, err := app.driverService.Load().Client.UnregisterDriver(
@@ -193,7 +201,7 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 	}
 
 	for {
-		_, message, err := conn.ReadMessage()
+		_, message, err := ws.ReadMessage()
 		if err != nil {
 			log.Printf("error reading message: %v\n", err)
 			break
