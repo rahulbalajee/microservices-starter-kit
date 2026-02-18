@@ -30,7 +30,7 @@ func newWSConn(c *websocket.Conn) *wsConn {
 	c.SetReadLimit(maxMessageSize)
 	c.SetReadDeadline(time.Now().Add(pongWait))
 
-	c.SetPongHandler(func(appData string) error {
+	c.SetPongHandler(func(string) error {
 		c.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
