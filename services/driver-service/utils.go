@@ -1,6 +1,9 @@
 package main
 
-import "math/rand/v2"
+import (
+	"math/rand/v2"
+	"strings"
+)
 
 var PredefinedRoutes = [][][]float64{
 	{
@@ -46,10 +49,10 @@ var PredefinedRoutes = [][][]float64{
 
 func GenerateRandomPlate() string {
 	letters := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	plate := ""
+	var plate strings.Builder
 	for range 3 {
-		plate += string(letters[rand.IntN(len(letters))])
+		plate.WriteString(string(letters[rand.IntN(len(letters))]))
 	}
 
-	return plate
+	return plate.String()
 }
