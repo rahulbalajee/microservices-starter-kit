@@ -23,6 +23,12 @@ spec:
             memory: "128Mi"
         ports:
         - containerPort: 9092
+        env:
+        - name: RABBITMQ_URI
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: uri
 ---
 apiVersion: v1
 kind: Service
