@@ -26,7 +26,7 @@ if os.name == 'nt':
 local_resource(
   'api-gateway-compile',
   gateway_compile_cmd,
-  deps=['./services/api-gateway', './shared'], labels="compiles")
+  deps=['./services/api-gateway', './shared', 'rabbitmq'], labels="compiles")
 
 
 docker_build_with_restart(
@@ -58,7 +58,7 @@ if os.name == 'nt':
 local_resource(
   'trip-service-compile',
   trip_compile_cmd,
-  deps=['./services/trip-service', './shared'], labels="compiles")
+  deps=['./services/trip-service', './shared', 'rabbitmq'], labels="compiles")
 
 docker_build_with_restart(
   'ride-sharing/trip-service',
@@ -86,7 +86,7 @@ driver_compile_cmd = 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/dr
 local_resource(
   'driver-service-compile',
   driver_compile_cmd,
-  deps=['./services/driver-service', './shared'], labels="compiles")
+  deps=['./services/driver-service', './shared', 'rabbitmq'], labels="compiles")
 
 docker_build_with_restart(
   'ride-sharing/driver-service',
