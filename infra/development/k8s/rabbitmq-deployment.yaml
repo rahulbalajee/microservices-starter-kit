@@ -1,9 +1,10 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: rabbitmq
 spec:
   replicas: 1
+  serviceName: rabbitmq
   selector:
     matchLabels:
       app: rabbitmq
@@ -29,14 +30,14 @@ spec:
             command: ["rabbitmq-diagnostics", "check_running"]
           initialDelaySeconds: 30
           periodSeconds: 10
-          timeoutSeconds: 5
+          timeoutSeconds: 15
           failureThreshold: 3
         livenessProbe:
           exec:
             command: ["rabbitmq-diagnostics", "check_running"]
           initialDelaySeconds: 60
           periodSeconds: 20
-          timeoutSeconds: 5
+          timeoutSeconds: 15
           failureThreshold: 3
         env:
         - name: RABBITMQ_DEFAULT_USER
@@ -49,6 +50,20 @@ spec:
             secretKeyRef:
               name: rabbitmq-credentials
               key: password
+        - name: RABBITMQ_MNESIA_BASE
+          value: /var/lib/rabbitmq/mnesia
+        volumeMounts:
+        - name: rabbitmq-data
+          mountPath: /var/lib/rabbitmq
+  volumeClaimTemplates:
+  - metadata:
+      name: rabbitmq-data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
 ---
 apiVersion: v1
 kind: Service
