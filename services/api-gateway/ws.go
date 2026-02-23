@@ -159,7 +159,13 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 	ws := newWSConn(conn)
 	defer ws.Close()
 
-	driverData, err := app.driverService.Load().Client.RegisterDriver(
+	driverService := app.driverService.Load()
+	if driverService == nil {
+		http.Error(w, "driver service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
+	driverData, err := driverService.Client.RegisterDriver(
 		r.Context(),
 		&driver.RegisterDriverRequest{
 			DriverID:    userID,
@@ -176,7 +182,7 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		_, err := app.driverService.Load().Client.UnregisterDriver(
+		_, err := driverService.Client.UnregisterDriver(
 			ctx,
 			&driver.RegisterDriverRequest{
 				DriverID:    userID,
