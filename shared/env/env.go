@@ -33,6 +33,21 @@ func GetInt(key string, fallback int) int {
 	return valAsInt
 }
 
+func GetFloat(key string, fallback float64) float64 {
+	val, ok := os.LookupEnv(key)
+	if !ok {
+		return fallback
+	}
+
+	valAsFloat, err := strconv.ParseFloat(val, 64)
+	if err != nil {
+		log.Printf("val %v cannot be converted to float %v\n", val, err)
+		return fallback
+	}
+
+	return valAsFloat
+}
+
 func GetBool(key string, fallback bool) bool {
 	val, ok := os.LookupEnv(key)
 	if !ok {
