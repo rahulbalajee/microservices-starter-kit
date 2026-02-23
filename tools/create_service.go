@@ -24,6 +24,7 @@ func main() {
 		"internal/service",
 		"internal/infrastructure/events",
 		"internal/infrastructure/grpc",
+		"internal/infrastructure/http",
 		"internal/infrastructure/repository",
 		"pkg/types",
 	}
@@ -46,7 +47,7 @@ This service handles all %s-related operations in the system.
 
 The service follows Clean Architecture principles with the following structure:
 
-` + "```" + `
+`+"```"+`
 services/%s-service/
 ├── cmd/                    # Application entry points
 │   └── main.go            # Main application setup
@@ -61,26 +62,27 @@ services/%s-service/
 ├── pkg/                  # Public packages
 │   └── types/           # Shared types and models
 └── README.md            # This file
-` + "```" + `
+`+"```"+`
 
 ### Layer Responsibilities
 
-1. **Domain Layer** (` + "`internal/domain/`" + `)
+1. **Domain Layer** (`+"`internal/domain/`"+`)
    - Contains business domain interfaces
    - Defines contracts for repositories and services
    - Pure business logic, no implementation details
 
-2. **Service Layer** (` + "`internal/service/`" + `)
+2. **Service Layer** (`+"`internal/service/`"+`)
    - Implements business logic
    - Uses repository interfaces
    - Coordinates between different parts of the system
 
-3. **Infrastructure Layer** (` + "`internal/infrastructure/`" + `)
-   - ` + "`repository/`" + `: Implements data persistence
-   - ` + "`events/`" + `: Handles event publishing and consuming
-   - ` + "`grpc/`" + `: Handles gRPC communication
+3. **Infrastructure Layer** (`+"`internal/infrastructure/`"+`)
+   - `+"`repository/`"+`: Implements data persistence
+   - `+"`events/`"+`: Handles event publishing and consuming
+   - `+"`grpc/`"+`: Handles gRPC communication
+   - `+"`http/`"+`: Handles HTTP communication
 
-4. **Public Types** (` + "`pkg/types/`" + `)
+4. **Public Types** (`+"`pkg/types/`"+`)
    - Contains shared types and models
    - Can be imported by other services
 
@@ -111,9 +113,10 @@ services/%s-service/
 │   └── infrastructure/   # External dependencies implementations (abstractions)
 │       ├── events/       # Event handling (RabbitMQ)
 │       ├── grpc/         # gRPC server handlers
+│		├── http/         # HTTP server handlers
 │       └── repository/   # Data persistence
 ├── pkg/                  # Public packages
 │   └── types/           # Shared types and models
 └── README.md            # This file
 `, *serviceName, *serviceName)
-} 
+}
