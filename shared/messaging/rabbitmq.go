@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"ride-sharing/shared/contracts"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -59,7 +60,7 @@ func (r *RabbitMQ) PublishMessage(ctx context.Context, routingKey string, messag
 		false,
 		false,
 		amqp.Publishing{
-			ContentType:  "text/plain",
+			ContentType:  "application/json",
 			Body:         jsonMsg,
 			DeliveryMode: amqp.Persistent,
 		},
@@ -68,7 +69,7 @@ func (r *RabbitMQ) PublishMessage(ctx context.Context, routingKey string, messag
 
 type MessageHandler func(context.Context, amqp.Delivery) error
 
-func (r *RabbitMQ) ConsumeMessages(queueName string, handler MessageHandler) error {
+func (r *RabbitMQ) ConsumeMessages(ctx context.Context, queueName string, handler MessageHandler) error {
 	err := r.Channel.Qos(
 		1,
 		0,
@@ -78,7 +79,8 @@ func (r *RabbitMQ) ConsumeMessages(queueName string, handler MessageHandler) err
 		return fmt.Errorf("failed to set QoS: %v", err)
 	}
 
-	msgs, err := r.Channel.Consume(
+	msgs, err := r.Channel.ConsumeWithContext(
+		ctx,
 		queueName,
 		"",
 		false,
@@ -91,25 +93,28 @@ func (r *RabbitMQ) ConsumeMessages(queueName string, handler MessageHandler) err
 		return fmt.Errorf("failed to consume messages: %w", err)
 	}
 
-	ctx := context.Background()
-
 	go func() {
 		for msg := range msgs {
 			log.Printf("received a message: %s\n", msg.Body)
 
-			if err := handler(ctx, msg); err != nil {
+			msgCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+
+			if err := handler(msgCtx, msg); err != nil {
 				log.Printf("failed to handle the message: %v\n", err)
 
 				if nackErr := msg.Nack(false, false); nackErr != nil {
 					log.Printf("error: failed to nack message: %v", nackErr)
 				}
 
+				cancel()
 				continue
 			}
 
 			if ackErr := msg.Ack(false); ackErr != nil {
 				log.Printf("error: failed to ack message: %v. Message body: %s\n", ackErr, msg.Body)
 			}
+
+			cancel()
 		}
 	}()
 
