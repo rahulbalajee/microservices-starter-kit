@@ -22,7 +22,13 @@ func (app *application) handleTripPreview(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	tripPreview, err := app.tripService.Load().Client.PreviewTrip(
+	tripService := app.tripService.Load()
+	if tripService == nil {
+		http.Error(w, "trip service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
+	tripPreview, err := tripService.Client.PreviewTrip(
 		r.Context(),
 		reqBody.toProto(),
 	)
@@ -50,8 +56,13 @@ func (app *application) handleTripStart(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Call the start endpoint from trip-service
-	tripStart, err := app.tripService.Load().Client.CreateTrip(
+	tripService := app.tripService.Load()
+	if tripService == nil {
+		http.Error(w, "trip service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
+	tripStart, err := tripService.Client.CreateTrip(
 		r.Context(),
 		reqBody.toProto(),
 	)
