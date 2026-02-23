@@ -1,3 +1,10 @@
+# trip service
+
+This service handles all trip-related operations in the system.
+
+## Architecture
+
+The service follows Clean Architecture principles with the following structure:
 
 ```
 services/trip-service/
@@ -10,6 +17,7 @@ services/trip-service/
 │   └── infrastructure/   # External dependencies implementations (abstractions)
 │       ├── events/       # Event handling (RabbitMQ)
 │       ├── grpc/         # gRPC server handlers
+│       ├── http/         # HTTP server handlers
 │       └── repository/   # Data persistence
 ├── pkg/                  # Public packages
 │   └── types/           # Shared types and models
@@ -32,6 +40,7 @@ services/trip-service/
    - `repository/`: Implements data persistence
    - `events/`: Handles event publishing and consuming
    - `grpc/`: Handles gRPC communication
+   - `http/`: Handles HTTP communication
 
 4. **Public Types** (`pkg/types/`)
    - Contains shared types and models

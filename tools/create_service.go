@@ -18,6 +18,12 @@ func main() {
 
 	// Create service directory structure
 	basePath := filepath.Join("services", *serviceName+"-service")
+
+	if _, err := os.Stat(basePath); err == nil {
+		fmt.Printf("Service %s already exists at %s\n", *serviceName, basePath)
+		os.Exit(1)
+	}
+
 	dirs := []string{
 		"cmd",
 		"internal/domain",
@@ -58,6 +64,7 @@ services/%s-service/
 │   └── infrastructure/   # External dependencies implementations (abstractions)
 │       ├── events/       # Event handling (RabbitMQ)
 │       ├── grpc/         # gRPC server handlers
+│       ├── http/         # HTTP server handlers
 │       └── repository/   # Data persistence
 ├── pkg/                  # Public packages
 │   └── types/           # Shared types and models
@@ -113,7 +120,7 @@ services/%s-service/
 │   └── infrastructure/   # External dependencies implementations (abstractions)
 │       ├── events/       # Event handling (RabbitMQ)
 │       ├── grpc/         # gRPC server handlers
-│		├── http/         # HTTP server handlers
+│       ├── http/         # HTTP server handlers
 │       └── repository/   # Data persistence
 ├── pkg/                  # Public packages
 │   └── types/           # Shared types and models
