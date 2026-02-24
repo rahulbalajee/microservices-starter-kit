@@ -62,26 +62,6 @@ func (w *wsConn) pingLoop() {
 	}
 }
 
-func (w *wsConn) WriteJSON(v any) error {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	w.c.SetWriteDeadline(time.Now().Add(writeWait))
-	return w.c.WriteJSON(v)
-}
-
-func (w *wsConn) ReadMessage() (int, []byte, error) {
-	return w.c.ReadMessage()
-}
-
-func (w *wsConn) WriteMessage(messageType int, data []byte) error {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	w.c.SetWriteDeadline(time.Now().Add(writeWait))
-	return w.c.WriteMessage(messageType, data)
-}
-
 func (w *wsConn) CloseNormal() {
 	// stop ping loop
 	select {
@@ -102,6 +82,26 @@ func (w *wsConn) CloseNormal() {
 func (w *wsConn) Close() {
 	w.CloseNormal()
 	_ = w.c.Close()
+}
+
+func (w *wsConn) WriteJSON(v any) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.c.SetWriteDeadline(time.Now().Add(writeWait))
+	return w.c.WriteJSON(v)
+}
+
+func (w *wsConn) ReadMessage() (int, []byte, error) {
+	return w.c.ReadMessage()
+}
+
+func (w *wsConn) WriteMessage(messageType int, data []byte) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.c.SetWriteDeadline(time.Now().Add(writeWait))
+	return w.c.WriteMessage(messageType, data)
 }
 
 var upgrader = websocket.Upgrader{
@@ -150,6 +150,12 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	driverService := app.driverService.Load()
+	if driverService == nil {
+		http.Error(w, "driver service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("websocket upgrade failed: %v\n", err)
@@ -158,12 +164,6 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 
 	ws := newWSConn(conn)
 	defer ws.Close()
-
-	driverService := app.driverService.Load()
-	if driverService == nil {
-		http.Error(w, "driver service unavailable", http.StatusServiceUnavailable)
-		return
-	}
 
 	driverData, err := driverService.Client.RegisterDriver(
 		r.Context(),
