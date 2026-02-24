@@ -11,25 +11,23 @@ import (
 )
 
 type Service struct {
-	drivers []*driverInMap
+	drivers []*driverRecord
 	mu      sync.RWMutex
 }
 
-type driverInMap struct {
+type driverRecord struct {
 	Driver *pb.Driver
 	// Index int
 	// TODO: route
 }
 
 func NewService() *Service {
-	return &Service{
-		drivers: make([]*driverInMap, 0),
-	}
+	return &Service{}
 }
 
 func (s *Service) FindAvailableDrivers(packageType string) []string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	var matchingDrivers []string
 
 	for _, driver := range s.drivers {
@@ -64,7 +62,7 @@ func (s *Service) RegisterDriver(driverId string, packageSlug string) (*pb.Drive
 		CarPlate:       GenerateRandomPlate(),
 	}
 
-	s.drivers = append(s.drivers, &driverInMap{Driver: driver})
+	s.drivers = append(s.drivers, &driverRecord{Driver: driver})
 
 	return driver, nil
 }
@@ -73,8 +71,8 @@ func (s *Service) UnregisterDriver(driverId string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for i, driverInMap := range s.drivers {
-		if driverInMap != nil && driverInMap.Driver != nil && driverInMap.Driver.Id == driverId {
+	for i, driverRecord := range s.drivers {
+		if driverRecord != nil && driverRecord.Driver != nil && driverRecord.Driver.Id == driverId {
 			// s.drivers = slices.append(s.drivers[:i], s.drivers[i+1:]...)
 			s.drivers = slices.Delete(s.drivers, i, i+1)
 			return
