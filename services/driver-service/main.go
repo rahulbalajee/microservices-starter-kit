@@ -14,12 +14,11 @@ import (
 )
 
 var (
-	grpcAddr = env.GetString("GRPC_ADDR", ":9092")
+	grpcAddr    = env.GetString("GRPC_ADDR", ":9092")
+	rabbitmqURI = env.GetString("RABBITMQ_URI", "amqp://guest:guest@rabbitmq:5672/")
 )
 
 func main() {
-	svc := NewService()
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -30,33 +29,28 @@ func main() {
 		cancel()
 	}()
 
-	lis, err := net.Listen("tcp", grpcAddr)
-	if err != nil {
-		log.Fatalf("failed to listen: %v\n", err)
-	}
+	svc := NewService()
 
-	// rabbitmq connection
-	rabbitmqURI := env.GetString("RABBITMQ_URI", "amqp://guest:guest@rabbitmq:5672/")
 	mq, err := messaging.NewRabbitMQ(rabbitmqURI)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer mq.Close()
-	log.Println("starting rabbitMQ connection")
 
-	// starting the gRPC server
+	consumer := NewTripConsumer(mq, svc)
+	if err := consumer.Listen(); err != nil {
+		log.Fatalf("failed to listen to the message: %v\n", err)
+	}
+
+	lis, err := net.Listen("tcp", grpcAddr)
+	if err != nil {
+		log.Fatalf("failed to listen: %v\n", err)
+	}
+
 	grpcServer := grpcserver.NewServer()
 	NewGrpcHandler(grpcServer, svc)
 
-	consumer := NewTripConsumer(mq, svc)
-	go func() {
-		if err := consumer.Listen(); err != nil {
-			log.Fatalf("failed to listen to the message: %v\n", err)
-		}
-	}()
-
-	log.Printf("starting gRPC server driver service on port %s\n", lis.Addr())
-
+	log.Printf("starting gRPC server on port %s\n", lis.Addr())
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Printf("failed to serve: %v\n", err)
