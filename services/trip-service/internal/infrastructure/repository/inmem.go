@@ -28,10 +28,10 @@ func (r *inmemRepository) CreateTrip(ctx context.Context, trip *domain.TripModel
 	return trip, nil
 }
 
-func (r *inmemRepository) SaveRideFare(ctx context.Context, f *domain.RideFareModel) error {
+func (r *inmemRepository) SaveRideFare(ctx context.Context, fare *domain.RideFareModel) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.rideFares[f.ID.Hex()] = f
+	r.rideFares[fare.ID.Hex()] = fare
 
 	return nil
 }
