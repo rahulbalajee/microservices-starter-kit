@@ -42,6 +42,7 @@ func (s *Service) CreateTrip(ctx context.Context, fare *domain.RideFareModel) (*
 
 func (s *Service) GetRoute(ctx context.Context, pickup, destination *types.Coordinate) (*tripTypes.OsrmAPIResponse, error) {
 	baseURL := "http://router.project-osrm.org"
+
 	url := fmt.Sprintf("%s/route/v1/driving/%f,%f;%f,%f?overview=full&geometries=geojson",
 		baseURL,
 		pickup.Longitude,

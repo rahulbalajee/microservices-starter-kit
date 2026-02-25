@@ -16,9 +16,9 @@ type OsrmAPIResponse struct {
 
 func (o *OsrmAPIResponse) ToProto() *pb.Route {
 	route := o.Routes[0]
-	geometry := route.Geometry.Coordinates
-	coordinates := make([]*pb.Coordinate, len(geometry))
-	for i, coor := range geometry {
+	coords := route.Geometry.Coordinates
+	coordinates := make([]*pb.Coordinate, len(coords))
+	for i, coor := range coords {
 		coordinates[i] = &pb.Coordinate{
 			Latitude:  coor[0],
 			Longitude: coor[1],
