@@ -24,7 +24,7 @@ type Service struct {
 func NewService(repo domain.TripRepository) *Service {
 	return &Service{
 		repo:   repo,
-		client: &http.Client{Timeout: 5 * time.Second},
+		client: &http.Client{Timeout: 10 * time.Second},
 	}
 }
 

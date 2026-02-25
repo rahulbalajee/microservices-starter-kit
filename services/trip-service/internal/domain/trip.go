@@ -2,13 +2,12 @@ package domain
 
 import (
 	"context"
-	"ride-sharing/shared/types"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	tripTypes "ride-sharing/services/trip-service/pkg/types"
-
 	pb "ride-sharing/shared/proto/trip"
+	"ride-sharing/shared/types"
 )
 
 type TripModel struct {
