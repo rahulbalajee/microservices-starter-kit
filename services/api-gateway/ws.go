@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"ride-sharing/shared/contracts"
+	"ride-sharing/shared/messaging"
 	"ride-sharing/shared/proto/driver"
 	"sync"
 	"time"
@@ -104,12 +105,9 @@ func (w *wsConn) WriteMessage(messageType int, data []byte) error {
 	return w.c.WriteMessage(messageType, data)
 }
 
-var upgrader = websocket.Upgrader{
-	// TODO: Fix this before production
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
+var (
+	connManager = messaging.NewConnectionManager()
+)
 
 func (app *application) handleRidersWebSocket(w http.ResponseWriter, r *http.Request) {
 	userID := r.URL.Query().Get("userID")
@@ -118,7 +116,7 @@ func (app *application) handleRidersWebSocket(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := connManager.Upgrade(w, r)
 	if err != nil {
 		log.Printf("websocket upgrade failed: %v\n", err)
 		return
@@ -126,6 +124,9 @@ func (app *application) handleRidersWebSocket(w http.ResponseWriter, r *http.Req
 
 	ws := newWSConn(conn)
 	defer ws.Close()
+
+	connManager.Add(userID, ws)
+	defer connManager.Remove(userID)
 
 	for {
 		_, message, err := ws.ReadMessage()
@@ -156,7 +157,7 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := connManager.Upgrade(w, r)
 	if err != nil {
 		log.Printf("websocket upgrade failed: %v\n", err)
 		return
@@ -164,6 +165,8 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 
 	ws := newWSConn(conn)
 	defer ws.Close()
+
+	connManager.Add(userID, ws)
 
 	driverData, err := driverService.Client.RegisterDriver(
 		r.Context(),
@@ -178,6 +181,8 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 	}
 
 	defer func() {
+		connManager.Remove(userID)
+
 		// r.Context() is already cancelled when the connection drops so use background instead to unregister drivers
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -196,12 +201,10 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 		log.Println("driver unregistered: ", userID)
 	}()
 
-	msg := contracts.WSMessage{
-		Type: "driver.cmd.register",
+	if err := ws.WriteJSON(contracts.WSMessage{
+		Type: contracts.DriverCmdRegister,
 		Data: driverData.Driver,
-	}
-
-	if err := ws.WriteJSON(msg); err != nil {
+	}); err != nil {
 		log.Printf("error sending message: %v\n", err)
 		return
 	}
