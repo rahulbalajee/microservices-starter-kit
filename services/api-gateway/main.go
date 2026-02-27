@@ -62,7 +62,7 @@ func main() {
 
 	mq, err := messaging.NewRabbitMQ(rabbitmqURI)
 	if err != nil {
-		log.Fatal("failed to start rabbitmq", err)
+		log.Fatal(err)
 	}
 	defer mq.Close()
 
