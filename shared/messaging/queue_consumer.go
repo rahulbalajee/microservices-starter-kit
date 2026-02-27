@@ -1,6 +1,7 @@
 package messaging
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"ride-sharing/shared/contracts"
@@ -20,8 +21,9 @@ func NewQueueConsumer(mq *RabbitMQ, connMgr *ConnectionManager, queueName string
 	}
 }
 
-func (qc *QueueConsumer) Start() error {
-	msgs, err := qc.mq.Channel.Consume(
+func (qc *QueueConsumer) Start(ctx context.Context) error {
+	msgs, err := qc.mq.Channel.ConsumeWithContext(
+		ctx,
 		qc.queueName,
 		"",
 		true,
@@ -35,30 +37,39 @@ func (qc *QueueConsumer) Start() error {
 	}
 
 	go func() {
-		for msg := range msgs {
-			var msgBody contracts.AmqpMessage
-			if err := json.Unmarshal(msg.Body, &msgBody); err != nil {
-				log.Println("failed to unmarshal message:", err)
-				continue
-			}
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case msg, ok := <-msgs:
+				if !ok {
+					return
+				}
 
-			userID := msgBody.OwnerID
-
-			var payload any
-			if msgBody.Data != nil {
-				if err := json.Unmarshal(msgBody.Data, &payload); err != nil {
-					log.Println("failed to unmarshall payload:", err)
+				var msgBody contracts.AmqpMessage
+				if err := json.Unmarshal(msg.Body, &msgBody); err != nil {
+					log.Println("failed to unmarshal message:", err)
 					continue
 				}
-			}
 
-			clientMsg := contracts.WSMessage{
-				Type: msg.RoutingKey,
-				Data: payload,
-			}
+				userID := msgBody.OwnerID
 
-			if err := qc.connMgr.SendMessage(userID, clientMsg); err != nil {
-				log.Printf("failed to send message to user %s: %v", userID, err)
+				var payload any
+				if msgBody.Data != nil {
+					if err := json.Unmarshal(msgBody.Data, &payload); err != nil {
+						log.Println("failed to unmarshall payload:", err)
+						continue
+					}
+				}
+
+				clientMsg := contracts.WSMessage{
+					Type: msg.RoutingKey,
+					Data: payload,
+				}
+
+				if err := qc.connMgr.SendMessage(userID, clientMsg); err != nil {
+					log.Printf("failed to send message to user %s: %v", userID, err)
+				}
 			}
 		}
 	}()

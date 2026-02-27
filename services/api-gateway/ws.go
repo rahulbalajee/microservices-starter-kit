@@ -209,14 +209,17 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// init queue consumer
+	// init queue consumer — cancelled when the WS read loop exits
+	consumeCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	queues := []string{
 		messaging.DriverCmdTripRequestQueue,
 	}
 
 	for _, queue := range queues {
 		consumer := messaging.NewQueueConsumer(app.mq, connManager, queue)
-		if err := consumer.Start(); err != nil {
+		if err := consumer.Start(consumeCtx); err != nil {
 			log.Printf("failed to start consumer for queue: %s: %v", queue, err)
 		}
 	}
