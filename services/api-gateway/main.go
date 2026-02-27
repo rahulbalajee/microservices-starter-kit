@@ -12,13 +12,16 @@ import (
 
 	"ride-sharing/services/api-gateway/grpc_clients"
 	"ride-sharing/shared/env"
+	"ride-sharing/shared/messaging"
 )
 
 var (
-	httpAddr = env.GetString("HTTP_ADDR", ":8081")
+	httpAddr    = env.GetString("HTTP_ADDR", ":8081")
+	rabbitmqURI = env.GetString("RABBITMQ_URI", "amqp://guest:guest@rabbitmq:5672/")
 )
 
 type application struct {
+	mq            *messaging.RabbitMQ
 	client        *http.Client
 	tripService   *atomic.Pointer[grpc_clients.TripServiceClient]
 	driverService *atomic.Pointer[grpc_clients.DriverServiceClient]
@@ -57,7 +60,14 @@ func main() {
 		grpc_clients.NewDriverServiceClient,
 	)
 
+	mq, err := messaging.NewRabbitMQ(rabbitmqURI)
+	if err != nil {
+		log.Fatal("failed to start rabbitmq", err)
+	}
+	defer mq.Close()
+
 	app := application{
+		mq:            mq,
 		client:        &http.Client{Timeout: 10 * time.Second},
 		tripService:   tripServicePtr,
 		driverService: driverServicePtr,

@@ -26,6 +26,12 @@ spec:
           envFrom:
             - configMapRef:
                 name: app-config
+          env:
+          - name: RABBITMQ_URI
+            valueFrom:
+              secretKeyRef:
+                name: rabbitmq-credentials
+                key: uri
 ---
 apiVersion: v1
 kind: Service
