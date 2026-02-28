@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"ride-sharing/shared/contracts"
@@ -128,6 +129,21 @@ func (app *application) handleRidersWebSocket(w http.ResponseWriter, r *http.Req
 	connManager.Add(userID, ws)
 	defer connManager.Remove(userID)
 
+	// init queue consumer — cancelled when the WS read loop exits
+	connCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	queues := []string{
+		messaging.NotifyDriverNotFound,
+	}
+
+	for _, queue := range queues {
+		consumer := messaging.NewQueueConsumer(app.mq, connManager, queue)
+		if err := consumer.Start(connCtx); err != nil {
+			log.Printf("failed to start consumer for queue: %s: %v", queue, err)
+		}
+	}
+
 	for {
 		_, message, err := ws.ReadMessage()
 		if err != nil {
@@ -210,7 +226,7 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 	}
 
 	// init queue consumer — cancelled when the WS read loop exits
-	consumeCtx, cancel := context.WithCancel(context.Background())
+	connCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	queues := []string{
@@ -219,7 +235,7 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 
 	for _, queue := range queues {
 		consumer := messaging.NewQueueConsumer(app.mq, connManager, queue)
-		if err := consumer.Start(consumeCtx); err != nil {
+		if err := consumer.Start(connCtx); err != nil {
 			log.Printf("failed to start consumer for queue: %s: %v", queue, err)
 		}
 	}
@@ -230,6 +246,35 @@ func (app *application) handleDriversWebSocket(w http.ResponseWriter, r *http.Re
 			log.Printf("error reading message: %v\n", err)
 			break
 		}
-		log.Printf("received message: %s\n", message)
+
+		type DriverMessage struct {
+			Type string          `json:"type"`
+			Data json.RawMessage `json:"data"`
+		}
+
+		var driverMsg DriverMessage
+		if err := json.Unmarshal(message, &driverMsg); err != nil {
+			log.Printf("error unmarshalling driver message: %v", err)
+			continue
+		}
+
+		switch driverMsg.Type {
+		case contracts.DriverCmdLocation:
+			// handle location in future
+			continue
+		case contracts.DriverCmdTripAccept, contracts.DriverCmdTripDecline:
+			if err := app.mq.PublishMessage(
+				connCtx,
+				driverMsg.Type,
+				contracts.AmqpMessage{
+					OwnerID: userID,
+					Data:    driverMsg.Data,
+				},
+			); err != nil {
+				log.Printf("error publishing message to MQ: %v", err)
+			}
+		default:
+			log.Printf("unknown message type: %s", driverMsg.Type)
+		}
 	}
 }
