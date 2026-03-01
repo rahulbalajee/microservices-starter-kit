@@ -167,6 +167,14 @@ func (r *RabbitMQ) setupExchangesAndQueues() error {
 		return fmt.Errorf("failed to declare and bind queue: %w", err)
 	}
 
+	if err = r.declareAndBindQueue(
+		NotifyDriverAssignQueue,
+		[]string{contracts.TripEventDriverAssigned},
+		TripExchange,
+	); err != nil {
+		return fmt.Errorf("failed to declare and bind queue: %w", err)
+	}
+
 	return nil
 }
 

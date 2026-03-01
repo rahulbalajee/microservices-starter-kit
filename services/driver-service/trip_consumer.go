@@ -15,10 +15,10 @@ type tripConsumer struct {
 	service  *Service
 }
 
-func NewTripConsumer(rabbitmq *messaging.RabbitMQ, service *Service) *tripConsumer {
+func NewTripConsumer(rabbitmq *messaging.RabbitMQ, svc *Service) *tripConsumer {
 	return &tripConsumer{
 		rabbitmq: rabbitmq,
-		service:  service,
+		service:  svc,
 	}
 }
 

@@ -45,6 +45,9 @@ func main() {
 
 	publisher := events.NewTripEventPublisher(mq)
 
+	driverConsumer := events.NewDriverConsumer(mq, svc)
+	go driverConsumer.Listen()
+
 	lis, err := net.Listen("tcp", grpcAddr)
 	if err != nil {
 		log.Fatalf("failed to listen: %v\n", err)

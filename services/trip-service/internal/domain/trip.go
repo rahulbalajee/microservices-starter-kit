@@ -6,6 +6,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	tripTypes "ride-sharing/services/trip-service/pkg/types"
+	pdb "ride-sharing/shared/proto/driver"
+
 	pb "ride-sharing/shared/proto/trip"
 	"ride-sharing/shared/types"
 )
@@ -34,6 +36,8 @@ type TripRepository interface {
 	CreateTrip(ctx context.Context, trip *TripModel) (*TripModel, error)
 	SaveRideFare(ctx context.Context, f *RideFareModel) error
 	GetRideFareByID(ctx context.Context, id string) (*RideFareModel, error)
+	GetTripByID(ctx context.Context, id string) (*TripModel, error)
+	UpdateTrip(ctx context.Context, tripID string, status string, driver *pdb.Driver) error
 }
 
 // Use-case interface: what the app can do (user intent). Handlers call this; implementation lives in service layer.
@@ -43,4 +47,6 @@ type TripService interface {
 	EstimatePackagesPriceWithRoute(route *tripTypes.OsrmAPIResponse) []*RideFareModel
 	GenerateTripFares(ctx context.Context, fares []*RideFareModel, userID string, route *tripTypes.OsrmAPIResponse) ([]*RideFareModel, error)
 	GetAndValidateFare(ctx context.Context, fareID, userID string) (*RideFareModel, error)
+	GetTripByID(ctx context.Context, id string) (*TripModel, error)
+	UpdateTrip(ctx context.Context, tripID string, status string, driver *pdb.Driver) error
 }

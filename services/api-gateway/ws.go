@@ -135,6 +135,7 @@ func (app *application) handleRidersWebSocket(w http.ResponseWriter, r *http.Req
 
 	queues := []string{
 		messaging.NotifyDriverNotFound,
+		messaging.NotifyDriverAssignQueue,
 	}
 
 	for _, queue := range queues {
