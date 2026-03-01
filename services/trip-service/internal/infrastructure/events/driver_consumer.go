@@ -56,10 +56,10 @@ func (d *driverConsumer) Listen() error {
 					log.Printf("failed to handle trip decline: %v", err)
 					return err
 				}
-				return nil
+			default:
+				log.Printf("unknown trip event: %+v", payload)
 			}
 
-			log.Printf("unknown trip event: %+v", payload)
 			return nil
 		},
 	)

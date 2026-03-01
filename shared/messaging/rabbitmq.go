@@ -188,7 +188,7 @@ func (r *RabbitMQ) declareAndBindQueue(queueName string, messageTypes []string, 
 		nil,
 	)
 	if err != nil {
-		log.Fatal("failed to declare queue: %w", err)
+		log.Fatalf("failed to declare queue: %v", err)
 	}
 
 	for _, msg := range messageTypes {
