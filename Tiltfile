@@ -49,6 +49,36 @@ k8s_resource('api-gateway', port_forwards=8081,
              resource_deps=['api-gateway-compile', 'rabbitmq'], labels="services")
 
 ### End of API Gateway ###
+### Payment Service ###
+
+payment_compile_cmd = 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/payment-service ./services/payment-service/cmd'
+if os.name == 'nt':
+  payment_compile_cmd = './infra/development/docker/payment-build.bat'
+
+local_resource(
+  'payment-service-compile',
+  payment_compile_cmd,
+  deps=['./services/payment-service', './shared', 'rabbitmq'], labels="compiles")
+
+docker_build_with_restart(
+  'ride-sharing/payment-service',
+  '.',
+  entrypoint=['/app/build/payment-service'],
+  dockerfile='./infra/development/docker/payment-service.Dockerfile',
+  only=[
+    './build/payment-service',
+    './shared',
+  ],
+  live_update=[
+    sync('./build', '/app/build'),
+    sync('./shared', '/app/shared'),
+  ],
+)
+
+k8s_yaml('./infra/development/k8s/payment-service-deployment.yaml')
+k8s_resource('payment-service', resource_deps=['payment-service-compile'], labels="services")
+
+### End of Payment Service ###
 ### Trip Service ###
 
 trip_compile_cmd = 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/trip-service ./services/trip-service/cmd'
