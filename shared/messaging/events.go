@@ -6,11 +6,13 @@ import (
 )
 
 const (
-	FindAvailableDriversQueue = "find_available_driver"
-	DriverCmdTripRequestQueue = "driver_cmd_trip_request"
-	DriverTripResponseQueue   = "driver_trip_response"
-	NotifyDriverNotFound      = "notify_driver_not_found"
-	NotifyDriverAssignQueue   = "notify_driver_assign"
+	FindAvailableDriversQueue        = "find_available_driver"
+	DriverCmdTripRequestQueue        = "driver_cmd_trip_request"
+	DriverTripResponseQueue          = "driver_trip_response"
+	NotifyDriverNotFound             = "notify_driver_not_found"
+	NotifyDriverAssignQueue          = "notify_driver_assign"
+	PaymentTripResponseQueue         = "payment_trip_response"
+	NotifyPaymentSessionCreatedQueue = "notify_payment_session_created"
 )
 
 type TripEventData struct {
@@ -21,4 +23,19 @@ type DriverTripResponseData struct {
 	Driver  *pdb.Driver `json:"driver"`
 	TripID  string      `json:"tripID"`
 	RiderID string      `json:"riderID"`
+}
+
+type PaymentEventSessionCreatedData struct {
+	TripID    string  `json:"tripID"`
+	SessionID string  `json:"sessionID"`
+	Amount    float64 `json:"amount"`
+	Currency  string  `json:"currency"`
+}
+
+type PaymentTripResponseData struct {
+	TripID   string  `json:"tripID"`
+	UserID   string  `json:"userID"`
+	DriverID string  `json:"driverID"`
+	Amount   float64 `json:"amount"`
+	Currency string  `json:"currency"`
 }

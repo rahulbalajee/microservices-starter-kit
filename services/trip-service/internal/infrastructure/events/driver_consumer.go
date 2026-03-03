@@ -102,6 +102,24 @@ func (d *driverConsumer) handleTripAccepted(ctx context.Context, tripID string, 
 	}
 
 	// TODO: Notify payment service to initiate payment process
+	marshalledPayload, err := json.Marshal(messaging.PaymentTripResponseData{
+		TripID:   tripID,
+		UserID:   trip.UserID,
+		DriverID: driver.Id,
+		Amount:   trip.RideFare.TotalPriceInCents,
+		Currency: "USD",
+	})
+
+	if err := d.RabbitMQ.PublishMessage(
+		ctx,
+		contracts.PaymentCmdCreateSession,
+		contracts.AmqpMessage{
+			OwnerID: trip.UserID,
+			Data:    marshalledPayload,
+		},
+	); err != nil {
+		return err
+	}
 
 	return nil
 }
