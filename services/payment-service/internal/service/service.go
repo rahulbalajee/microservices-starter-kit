@@ -14,8 +14,10 @@ type paymentService struct {
 	paymentProcessor domain.PaymentProcessor
 }
 
-func NewPaymentService() *paymentService {
-	return &paymentService{}
+func NewPaymentService(paymentProcessor domain.PaymentProcessor) *paymentService {
+	return &paymentService{
+		paymentProcessor: paymentProcessor,
+	}
 }
 
 func (s *paymentService) CreatePaymentSession(ctx context.Context, tripID string, userID string, driverID string, amount int64, currency string) (*types.PaymentIntent, error) {
