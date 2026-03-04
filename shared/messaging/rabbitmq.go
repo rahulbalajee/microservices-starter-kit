@@ -191,6 +191,14 @@ func (r *RabbitMQ) setupExchangesAndQueues() error {
 		return fmt.Errorf("failed to declare and bind queue: %w", err)
 	}
 
+	if err = r.declareAndBindQueue(
+		NotifyPaymentSuccessQueue,
+		[]string{contracts.PaymentEventSuccess},
+		TripExchange,
+	); err != nil {
+		return fmt.Errorf("failed to declare and bind queue: %w", err)
+	}
+
 	return nil
 }
 

@@ -79,6 +79,7 @@ func main() {
 	mux.HandleFunc("POST /trip/start", enableCORS(app.handleTripStart))
 	mux.HandleFunc("/ws/riders", app.handleRidersWebSocket)
 	mux.HandleFunc("/ws/drivers", app.handleDriversWebSocket)
+	mux.HandleFunc("/webhook/stripe", app.handleStripeWebhook)
 
 	srv := &http.Server{
 		Addr:              httpAddr,
