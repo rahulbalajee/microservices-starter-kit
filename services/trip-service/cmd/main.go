@@ -48,6 +48,9 @@ func main() {
 	driverConsumer := events.NewDriverConsumer(mq, svc)
 	go driverConsumer.Listen()
 
+	paymentConsumer := events.NewPaymentConsumer(mq, svc)
+	go paymentConsumer.Listen()
+
 	lis, err := net.Listen("tcp", grpcAddr)
 	if err != nil {
 		log.Fatalf("failed to listen: %v\n", err)
