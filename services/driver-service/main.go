@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"ride-sharing/shared/env"
 	"ride-sharing/shared/messaging"
+	"ride-sharing/shared/tracing"
 	"syscall"
 
 	grpcserver "google.golang.org/grpc"
@@ -21,6 +22,18 @@ var (
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	tracerCfg := tracing.Config{
+		ServiceName:      "driver-service",
+		Environment:      env.GetString("ENVIRONMENT", "development"),
+		ExporterEndpoint: env.GetString("OTEL_EXPORTER_ENDPOINT", "jaeger:4318"),
+	}
+
+	sh, err := tracing.InitTracer(tracerCfg)
+	if err != nil {
+		log.Fatalf("failed to initialize tracer %v", err)
+	}
+	defer sh(ctx)
 
 	go func() {
 		sigCh := make(chan os.Signal, 1)

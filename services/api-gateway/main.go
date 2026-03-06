@@ -13,6 +13,7 @@ import (
 	"ride-sharing/services/api-gateway/grpc_clients"
 	"ride-sharing/shared/env"
 	"ride-sharing/shared/messaging"
+	"ride-sharing/shared/tracing"
 )
 
 var (
@@ -28,6 +29,21 @@ type application struct {
 }
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	tracerCfg := tracing.Config{
+		ServiceName:      "api-gateway",
+		Environment:      env.GetString("ENVIRONMENT", "development"),
+		ExporterEndpoint: env.GetString("OTEL_EXPORTER_ENDPOINT", "jaeger:4318"),
+	}
+
+	sh, err := tracing.InitTracer(tracerCfg)
+	if err != nil {
+		log.Fatalf("failed to initialize tracer %v", err)
+	}
+	defer sh(ctx)
+
 	log.Println("Starting API Gateway")
 
 	maxBackoff := 30 * time.Second
