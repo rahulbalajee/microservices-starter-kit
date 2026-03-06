@@ -46,7 +46,11 @@ spec:
             secretKeyRef:
               name: rabbitmq-credentials
               key: uri
-
+        - name: OTEL_EXPORTER_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: OTEL_EXPORTER_ENDPOINT
 ---
 apiVersion: v1
 kind: Service

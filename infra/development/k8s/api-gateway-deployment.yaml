@@ -37,6 +37,11 @@ spec:
               secretKeyRef:
                 name: stripe-secrets
                 key: stripe_webhook_key
+          - name: OTEL_EXPORTER_ENDPOINT
+            valueFrom:
+              configMapKeyRef:
+                name: app-config
+                key: OTEL_EXPORTER_ENDPOINT
 ---
 apiVersion: v1
 kind: Service

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -14,24 +15,32 @@ import (
 type Config struct {
 	ServiceName      string
 	Environment      string
-	ExporterEndpoint string
+	ExporterEndpoint string // host:port of the OTLP collector (e.g. "jaeger:4318")
 }
 
 func InitTracer(cfg Config) (func(context.Context) error, error) {
-	// Exporter
+	traceExporter, err := newExporter(cfg.ExporterEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create trace exporter: %w", err)
+	}
 
-	// Trace provider
-	traceProvider, err := newTraceProvider(cfg, nil)
+	traceProvider, err := newTraceProvider(cfg, traceExporter)
 	if err != nil {
 		return nil, err
 	}
 	otel.SetTracerProvider(traceProvider)
 
-	// Propagator
-	prop := newPropagator()
-	otel.SetTextMapPropagator(prop)
+	otel.SetTextMapPropagator(newPropagator())
 
 	return traceProvider.Shutdown, nil
+}
+
+func newExporter(endpoint string) (sdktrace.SpanExporter, error) {
+	return otlptracehttp.New(
+		context.Background(),
+		otlptracehttp.WithEndpoint(endpoint),
+		otlptracehttp.WithInsecure(),
+	)
 }
 
 func newPropagator() propagation.TextMapPropagator {
