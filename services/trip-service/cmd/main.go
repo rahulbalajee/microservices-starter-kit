@@ -21,6 +21,8 @@ import (
 var (
 	grpcAddr    = env.GetString("GRPC_ADDR", ":9093")
 	rabbitmqURI = env.GetString("RABBITMQ_URI", "amqp://guest:guest@rabbitmq:5672/")
+	environment = env.GetString("ENVIRONMENT", "development")
+	endpoint    = env.GetString("OTEL_EXPORTER_ENDPOINT", "jaeger:4318")
 )
 
 func main() {
@@ -29,8 +31,8 @@ func main() {
 
 	tracerCfg := tracing.Config{
 		ServiceName:      "trip-service",
-		Environment:      env.GetString("ENVIRONMENT", "development"),
-		ExporterEndpoint: env.GetString("OTEL_EXPORTER_ENDPOINT", "jaeger:4318"),
+		Environment:      environment,
+		ExporterEndpoint: endpoint,
 	}
 
 	sh, err := tracing.InitTracer(tracerCfg)

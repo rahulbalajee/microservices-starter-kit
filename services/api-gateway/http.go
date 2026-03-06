@@ -9,12 +9,18 @@ import (
 	"ride-sharing/shared/contracts"
 	"ride-sharing/shared/env"
 	"ride-sharing/shared/messaging"
+	"ride-sharing/shared/tracing"
 
 	"github.com/stripe/stripe-go/v81"
 	"github.com/stripe/stripe-go/v81/webhook"
 )
 
+var tracer = tracing.GetTracer("api-gateway")
+
 func (app *application) handleTripPreview(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "handleTripPreview")
+	defer span.End()
+
 	var reqBody previewTripRequest
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		http.Error(w, "failed to parse JSON data", http.StatusBadRequest)
@@ -35,7 +41,7 @@ func (app *application) handleTripPreview(w http.ResponseWriter, r *http.Request
 	}
 
 	tripPreview, err := tripService.Client.PreviewTrip(
-		r.Context(),
+		ctx,
 		reqBody.toProto(),
 	)
 	if err != nil {
@@ -49,6 +55,9 @@ func (app *application) handleTripPreview(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) handleTripStart(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "handleTripStart")
+	defer span.End()
+
 	var reqBody startTripRequest
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		http.Error(w, "failed to parse JSON data", http.StatusBadRequest)
@@ -69,7 +78,7 @@ func (app *application) handleTripStart(w http.ResponseWriter, r *http.Request) 
 	}
 
 	tripStart, err := tripService.Client.CreateTrip(
-		r.Context(),
+		ctx,
 		reqBody.toProto(),
 	)
 	if err != nil {
@@ -83,6 +92,9 @@ func (app *application) handleTripStart(w http.ResponseWriter, r *http.Request) 
 }
 
 func (app *application) handleStripeWebhook(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "handleStripeWebhook")
+	defer span.End()
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "failed to read request body", http.StatusInternalServerError)
@@ -140,7 +152,7 @@ func (app *application) handleStripeWebhook(w http.ResponseWriter, r *http.Reque
 		}
 
 		if err := app.mq.PublishMessage(
-			r.Context(),
+			ctx,
 			contracts.PaymentEventSuccess,
 			message,
 		); err != nil {

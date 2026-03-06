@@ -19,6 +19,8 @@ import (
 var (
 	httpAddr    = env.GetString("HTTP_ADDR", ":8081")
 	rabbitmqURI = env.GetString("RABBITMQ_URI", "amqp://guest:guest@rabbitmq:5672/")
+	environment = env.GetString("ENVIRONMENT", "development")
+	endpoint    = env.GetString("OTEL_EXPORTER_ENDPOINT", "jaeger:4318")
 )
 
 type application struct {
@@ -34,8 +36,8 @@ func main() {
 
 	tracerCfg := tracing.Config{
 		ServiceName:      "api-gateway",
-		Environment:      env.GetString("ENVIRONMENT", "development"),
-		ExporterEndpoint: env.GetString("OTEL_EXPORTER_ENDPOINT", "jaeger:4318"),
+		Environment:      environment,
+		ExporterEndpoint: endpoint,
 	}
 
 	sh, err := tracing.InitTracer(tracerCfg)
@@ -91,11 +93,11 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("POST /trip/preview", enableCORS(app.handleTripPreview))
-	mux.HandleFunc("POST /trip/start", enableCORS(app.handleTripStart))
-	mux.HandleFunc("/ws/riders", app.handleRidersWebSocket)
-	mux.HandleFunc("/ws/drivers", app.handleDriversWebSocket)
-	mux.HandleFunc("/webhook/stripe", app.handleStripeWebhook)
+	mux.Handle("POST /trip/preview", tracing.WrapHandlerFunc(enableCORS(app.handleTripPreview), "/trip/preview"))
+	mux.Handle("POST /trip/start", tracing.WrapHandlerFunc(enableCORS(app.handleTripStart), "/trip/start"))
+	mux.Handle("/ws/riders", tracing.WrapHandlerFunc(http.HandlerFunc(app.handleRidersWebSocket), "/ws/riders"))
+	mux.Handle("/ws/drivers", tracing.WrapHandlerFunc(http.HandlerFunc(app.handleDriversWebSocket), "/ws/drivers"))
+	mux.Handle("/webhook/stripe", tracing.WrapHandlerFunc(http.HandlerFunc(app.handleStripeWebhook), "/webhook/stripe"))
 
 	srv := &http.Server{
 		Addr:              httpAddr,
