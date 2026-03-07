@@ -84,7 +84,9 @@ func (c *TripConsumer) handleTripAccepted(ctx context.Context, payload messaging
 		return err
 	}
 
-	if err := c.mq.PublishMessage(ctx, contracts.PaymentEventSessionCreated,
+	if err := c.mq.PublishMessage(
+		ctx,
+		contracts.PaymentEventSessionCreated,
 		contracts.AmqpMessage{
 			OwnerID: payload.UserID,
 			Data:    payloadBytes,

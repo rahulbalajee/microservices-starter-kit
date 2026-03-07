@@ -61,17 +61,25 @@ func main() {
 	publisher := events.NewTripEventPublisher(mq)
 
 	driverConsumer := events.NewDriverConsumer(mq, svc)
-	go driverConsumer.Listen()
+	go func() {
+		if err := driverConsumer.Listen(); err != nil {
+			log.Fatalf("driver consumer failed: %v", err)
+		}
+	}()
 
 	paymentConsumer := events.NewPaymentConsumer(mq, svc)
-	go paymentConsumer.Listen()
+	go func() {
+		if err := paymentConsumer.Listen(); err != nil {
+			log.Fatalf("payment consumer failed: %v", err)
+		}
+	}()
 
 	lis, err := net.Listen("tcp", grpcAddr)
 	if err != nil {
 		log.Fatalf("failed to listen: %v\n", err)
 	}
 
-	grpcServer := grpcserver.NewServer()
+	grpcServer := grpcserver.NewServer(tracing.WithTracingInterceptors()...)
 	grpc.NewGRPCHandler(grpcServer, svc, publisher)
 
 	log.Printf("starting gRPC server on port %s\n", lis.Addr())

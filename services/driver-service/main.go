@@ -62,7 +62,7 @@ func main() {
 		log.Fatalf("failed to listen: %v\n", err)
 	}
 
-	grpcServer := grpcserver.NewServer()
+	grpcServer := grpcserver.NewServer(tracing.WithTracingInterceptors()...)
 	NewGrpcHandler(grpcServer, svc)
 
 	log.Printf("starting gRPC server on port %s\n", lis.Addr())
