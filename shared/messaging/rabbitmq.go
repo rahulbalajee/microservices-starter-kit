@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 	"ride-sharing/shared/contracts"
+	"ride-sharing/shared/retry"
 	"ride-sharing/shared/tracing"
-	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -107,24 +107,48 @@ func (r *RabbitMQ) ConsumeMessages(ctx context.Context, queueName string, handle
 				func(ctx context.Context, d amqp.Delivery) error {
 					log.Printf("received a message: %s\n", msg.Body)
 
-					msgCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+					cfg := retry.DefaultConfig()
+					err := retry.WithBackoff(ctx, cfg, func() error {
+						return handler(ctx, d)
+					})
+					if err != nil {
+						log.Printf("message processing failed after %d retries for message ID: %s, err: %v", cfg.MaxRetries, d.MessageId, err)
 
-					if err := handler(msgCtx, msg); err != nil {
-						log.Printf("failed to handle the message: %v\n", err)
-
-						if nackErr := msg.Nack(false, false); nackErr != nil {
-							log.Printf("error: failed to nack message: %v", nackErr)
+						headers := amqp.Table{}
+						if d.Headers != nil {
+							headers = d.Headers
 						}
 
-						cancel()
-						return nil
+						headers["x-death-reason"] = err.Error()
+						headers["x-original-exchange"] = d.Exchange
+						headers["x-original-routing-key"] = d.RoutingKey
+						headers["x-retry-count"] = cfg.MaxRetries
+						d.Headers = headers
+
+						// reject without requeue after retries - DLQ
+						_ = d.Reject(false)
+						return err
 					}
+
+					/*
+						msgCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+
+						if err := handler(msgCtx, msg); err != nil {
+							log.Printf("failed to handle the message: %v\n", err)
+
+							if nackErr := msg.Nack(false, false); nackErr != nil {
+								log.Printf("error: failed to nack message: %v", nackErr)
+							}
+
+							cancel()
+							return nil
+						}
+					*/
 
 					if ackErr := msg.Ack(false); ackErr != nil {
 						log.Printf("error: failed to ack message: %v. Message body: %s\n", ackErr, msg.Body)
 					}
 
-					cancel()
 					return nil
 				},
 			); err != nil {
