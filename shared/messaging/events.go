@@ -16,6 +16,8 @@ const (
 	NotifyPaymentSuccessQueue        = "payment_success"
 )
 
+const DeadLetterQueue = "dead_letter_queue"
+
 type TripEventData struct {
 	Trip *pb.Trip `json:"trip"`
 }

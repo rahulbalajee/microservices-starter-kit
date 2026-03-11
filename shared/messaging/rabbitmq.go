@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	TripExchange = "trip"
+	TripExchange       = "trip"
+	DeadLetterExchange = "dlx"
 )
 
 type RabbitMQ struct {
@@ -160,7 +161,50 @@ func (r *RabbitMQ) ConsumeMessages(ctx context.Context, queueName string, handle
 	return nil
 }
 
+func (r *RabbitMQ) setupDeadLetterExchange() error {
+	err := r.Channel.ExchangeDeclare(
+		DeadLetterExchange,
+		"topic",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to declare exchange: %s: %w", DeadLetterExchange, err)
+	}
+
+	q, err := r.Channel.QueueDeclare(
+		DeadLetterQueue,
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		log.Fatalf("failed to declare queue: %v", err)
+	}
+
+	if err = r.Channel.QueueBind(
+		q.Name,
+		"#",
+		DeadLetterExchange,
+		false,
+		nil,
+	); err != nil {
+		return fmt.Errorf("failed to bind DLQ: %v", err)
+	}
+
+	return nil
+}
+
 func (r *RabbitMQ) setupExchangesAndQueues() error {
+	if err := r.setupDeadLetterExchange(); err != nil {
+		return err
+	}
+
 	err := r.Channel.ExchangeDeclare(
 		TripExchange,
 		"topic",
@@ -242,13 +286,18 @@ func (r *RabbitMQ) setupExchangesAndQueues() error {
 }
 
 func (r *RabbitMQ) declareAndBindQueue(queueName string, messageTypes []string, exchange string) error {
+	// Add DLQ conf
+	args := amqp.Table{
+		"x-dead-letter-exchange": DeadLetterExchange,
+	}
+
 	q, err := r.Channel.QueueDeclare(
 		queueName,
 		true,
 		false,
 		false,
 		false,
-		nil,
+		args,
 	)
 	if err != nil {
 		log.Fatalf("failed to declare queue: %v", err)
