@@ -49,9 +49,6 @@ func main() {
 		cancel()
 	}()
 
-	inmemRepo := repository.NewInmemRepository()
-	svc := service.NewService(inmemRepo)
-
 	mongoClient, err := db.NewMongoClient(ctx, db.NewMongoDefaultConfig())
 	if err != nil {
 		log.Fatalf("failed to init MongoDB, err: %v", err)
@@ -60,6 +57,9 @@ func main() {
 
 	mongoDb := db.GetDatabase(mongoClient, db.NewMongoDefaultConfig())
 	log.Println(mongoDb.Name())
+
+	mongoDbRepo := repository.NewMongoRepository(mongoDb)
+	svc := service.NewService(mongoDbRepo)
 
 	log.Println("starting rabbitMQ connection")
 	mq, err := messaging.NewRabbitMQ(rabbitmqURI)
