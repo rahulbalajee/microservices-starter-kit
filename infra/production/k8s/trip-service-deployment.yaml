@@ -16,13 +16,29 @@ spec:
         - name: trip-service
           image: europe-west1-docker.pkg.dev/{{PROJECT_ID}}/ride-sharing/trip-service
           ports:
-            - containerPort: 8083
+            - containerPort: 9093
           resources:
             requests:
               memory: "128Mi"
               cpu: "125m"
             limits:
               memory: "128Mi"
+          env:
+          - name: RABBITMQ_URI
+            valueFrom:
+              secretKeyRef:
+                name: rabbitmq-credentials
+                key: uri
+          - name: OTEL_EXPORTER_ENDPOINT
+            valueFrom:
+              configMapKeyRef:
+                name: app-config
+                key: OTEL_EXPORTER_ENDPOINT
+          - name: MONGODB_URI
+            valueFrom:
+              secretKeyRef:
+                name: mongodb
+                key: uri
 ---
 apiVersion: v1
 kind: Service
@@ -36,3 +52,6 @@ spec:
     - port: 8083
       name: http
       targetPort: 8083
+    - port: 9093
+      name: grpc
+      targetPort: 9093

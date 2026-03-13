@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: driver-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: driver-service
+  template:
+    metadata:
+      labels:
+        app: driver-service
+    spec:
+      containers:
+      - name: driver-service
+        image: europe-west1-docker.pkg.dev/{{PROJECT_ID}}/ride-sharing/driver-service
+        env: 
+        - name: RABBITMQ_URI
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-credentials
+              key: uri
+        - name: OTEL_EXPORTER_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: OTEL_EXPORTER_ENDPOINT
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "125m"
+          limits:
+            memory: "128Mi"
+        ports:
+        - containerPort: 9092
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: driver-service
+spec:
+  type: ClusterIP
+  selector:
+    app: driver-service
+  ports:
+    - port: 9092
+      name: grpc
+      targetPort: 9092

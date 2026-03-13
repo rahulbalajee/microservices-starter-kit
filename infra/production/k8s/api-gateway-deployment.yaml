@@ -23,6 +23,21 @@ spec:
                 configMapKeyRef:
                   key: GATEWAY_HTTP_ADDR
                   name: app-config
+            - name: OTEL_EXPORTER_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  key: OTEL_EXPORTER_ENDPOINT
+                  name: app-config
+            - name: RABBITMQ_URI
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: uri
+            - name: STRIPE_WEBHOOK_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stripe-secrets
+                  key: stripe_webhook_key
           resources:
             requests:
               memory: "128Mi"
